@@ -1,0 +1,19 @@
+Update plan.md and HANDOFF.md to close this session and set up the next one.
+
+Steps (get explicit approval before each write):
+
+1. Ask Eugene: what was completed this session, what was not, any decisions made.
+2. Update plan.md:
+   - Mark this session as [COMPLETE] with a one-line summary of what was actually done.
+   - Add any new tasks discovered to the relevant future session or Backlog.
+3. Rewrite HANDOFF.md for the next session:
+   - Session N summary (2-3 sentences, what was built and why it matters).
+   - Next session goal (one sentence).
+   - Tasks in order (numbered, specific).
+   - Key context Gremlin needs (gotchas, decisions, changed constraints).
+4. Stage: plan.md and HANDOFF.md only.
+5. Commit with single-line message: "session N end: <one phrase summary>"
+6. Push.
+
+Do NOT touch CLAUDE.md.
+Do NOT commit src/ changes unless Eugene explicitly says they are clean.

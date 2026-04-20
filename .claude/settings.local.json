@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create *)",
+      "Bash(npx create-vite@latest *)",
+      "Bash(cp timeview-temp/index.html .)",
+      "Bash(cp timeview-temp/vite.config.js .)",
+      "Bash(cp timeview-temp/eslint.config.js .)",
+      "Bash(cp -r timeview-temp/public .)",
+      "Bash(cp -r timeview-temp/src .)",
+      "Bash(npx vite *)"
+    ]
+  }
+}

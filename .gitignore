@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+
+# Vite
+*.local
+.vite/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python (tools/)
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Markdown — internal docs only
+*.md
+!README.md
+!CLAUDE.md
+
+# Auto-memory (Cowork internal)
+.auto-memory/
