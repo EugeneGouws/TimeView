@@ -20,6 +20,12 @@ dist-ssr/
 *.swp
 *.swo
 
+# Claude
+.claude/
+Docs/commands/
+Docs/
+data/
+
 # OS
 .DS_Store
 Thumbs.db

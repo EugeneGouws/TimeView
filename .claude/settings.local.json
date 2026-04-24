@@ -8,7 +8,17 @@
       "Bash(cp timeview-temp/eslint.config.js .)",
       "Bash(cp -r timeview-temp/public .)",
       "Bash(cp -r timeview-temp/src .)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(python -c ' *)",
+      "Bash(python tools/st1_to_json.py --input data/ST1.xlsx --output data/timetable.json)",
+      "Bash(python tools/tt1_to_json.py --st1-json data/timetable.json --input data/TT1.xlsx)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(python st1_to_json.py --input ../data/ST1.xlsx --output ../data/timetable.json)",
+      "Bash(python tt1_to_json.py --st1-json ../data/timetable.json --input ../data/TT1.xlsx)",
+      "Bash(python -c ' *, and nevermind subjects.py. that information is captured in the timetable schema)",
+      "Bash(python *)",
+      "Bash(npx eslint *)"
     ]
   }
 }

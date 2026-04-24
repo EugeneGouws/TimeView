@@ -1,121 +1,123 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AppProvider, useAppState } from "./store/appState";
+import TopBar from "./components/TopBar";
+import TimetableGrid from "./components/TimetableGrid";
+import SubblockPopout from "./components/SubblockPopout";
+import SearchBar from "./components/SearchBar";
+import {
+  buildSlotMap,
+  getTeacherSlotMap,
+  getStudentSlotMap,
+  getSubjectSlotMap,
+} from "./utils/timetableLayout";
+import { validate } from "./utils/schema";
+import { loadTimetable, saveTimetable } from "./utils/storage";
+import "./App.css";
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+function getEntityLabel(data, entity) {
+  if (!entity || !data) return "";
+  if (entity.type === "teacher") return data.teachers[entity.id]?.name ?? entity.id;
+  if (entity.type === "student") return data.students[entity.id]?.name ?? entity.id;
+  return entity.id; // subject code is its own label
 }
 
-export default App
+function AppShell() {
+  const { state, dispatch } = useAppState();
+  const data = state.timetableData;
+  const activeEntity = state.activeEntity;
+
+  const [popout, setPopout] = useState(null); // { slot, cellRect }
+  const hydrated = useRef(false);
+
+  useEffect(() => {
+    const stored = loadTimetable();
+    if (stored) {
+      const { ok } = validate(stored);
+      if (ok) dispatch({ type: "LOAD_TIMETABLE", payload: stored });
+    }
+    hydrated.current = true;
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!hydrated.current) return;
+    if (data) saveTimetable(data);
+  }, [data]);
+
+  const schoolSlotMap = useMemo(() => (data ? buildSlotMap(data) : {}), [data]);
+
+  const entitySlotMap = useMemo(() => {
+    if (!data || !activeEntity) return {};
+    const { type, id } = activeEntity;
+    if (type === "teacher") return getTeacherSlotMap(data, id);
+    if (type === "student") return getStudentSlotMap(data, id);
+    return getSubjectSlotMap(data, id);
+  }, [data, activeEntity]);
+
+  const currentSlotMap = activeEntity ? entitySlotMap : schoolSlotMap;
+  const entityLabel = getEntityLabel(data, activeEntity);
+
+  function handleStudentSelect(studentId) {
+    dispatch({
+      type: "SET_ACTIVE_ENTITY",
+      payload: { type: "student", id: studentId },
+    });
+  }
+
+  function handleCellClick(slot, cellRect, gridRect) {
+    setPopout({ slot, cellRect, gridRect });
+  }
+
+  function handleClose() {
+    dispatch({ type: "CLEAR_ACTIVE_ENTITY" });
+  }
+
+  return (
+    <div id="app">
+      <TopBar />
+      <div id="timetable-area">
+        {data && <SearchBar />}
+        {data && activeEntity && (
+          <div className="entity-bar">
+            <span className="entity-bar-label">
+              {activeEntity.type.charAt(0).toUpperCase() + activeEntity.type.slice(1)}
+              {": "}
+              {entityLabel}
+            </span>
+            <button className="entity-close-btn" onClick={handleClose}>×</button>
+          </div>
+        )}
+        {data ? (
+          <TimetableGrid
+            slotMap={currentSlotMap}
+            data={data}
+            mode={activeEntity ? "entity" : "school"}
+            entityType={activeEntity?.type}
+            onCellClick={handleCellClick}
+          />
+        ) : (
+          <p className="no-data">No timetable loaded.</p>
+        )}
+      </div>
+      {popout && data && (
+        <SubblockPopout
+          slot={popout.slot}
+          cellRect={popout.cellRect}
+          gridRect={popout.gridRect}
+          data={data}
+          slotMap={currentSlotMap}
+          mode={activeEntity ? "entity" : "school"}
+          onStudentSelect={handleStudentSelect}
+          onClose={() => setPopout(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AppProvider>
+      <AppShell />
+    </AppProvider>
+  );
+}
