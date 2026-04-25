@@ -1,5 +1,6 @@
-import { BLOCKS, PERIODS } from "../utils/timetableLayout";
+import { TIMETABLE_GRID } from "../utils/timetableLayout";
 import { subjectDisplay } from "../utils/subjectNames";
+import { ACTIVITY_LABEL, mergedFreeSlot } from "../utils/overlay";
 
 const REG_LETTERS = ["R", "E", "G", "", "R", "E", "G", ""];
 const BREAK_LETTERS = ["", "B", "R", "E", "A", "K", "", ""];
@@ -15,41 +16,76 @@ function formatLines(data, labels, entityType) {
   });
 }
 
-function LessonCell({ slot, labels, mode, entityType, data, onCellClick }) {
+function captureRects(e) {
+  const r = e.currentTarget.getBoundingClientRect();
+  const wrap = e.currentTarget.closest(".grid-wrap");
+  const gr = wrap ? wrap.getBoundingClientRect() : null;
+  return {
+    cellRect: {
+      top: r.top, left: r.left, right: r.right, bottom: r.bottom,
+      width: r.width, height: r.height,
+    },
+    gridRect: gr
+      ? { top: gr.top, bottom: gr.bottom, left: gr.left, right: gr.right, height: gr.height }
+      : null,
+  };
+}
+
+function LessonCell({
+  slot, labels, mode, entityType, data, overlay, activeEntity,
+  onCellClick,
+}) {
   const hasClasses = labels.length > 0;
 
-  function handleClick(e) {
-    if (!hasClasses) return;
-    const r = e.currentTarget.getBoundingClientRect();
-    const wrap = e.currentTarget.closest(".grid-wrap");
-    const gr = wrap ? wrap.getBoundingClientRect() : null;
-    onCellClick(
-      slot,
-      {
-        top: r.top, left: r.left, right: r.right, bottom: r.bottom,
-        width: r.width, height: r.height,
-      },
-      gr
-        ? { top: gr.top, bottom: gr.bottom, left: gr.left, right: gr.right, height: gr.height }
-        : null
-    );
+  // Free-period activity for this slot (entity mode, student/teacher).
+  const freeCode =
+    mode === "entity" && activeEntity && (activeEntity.type === "student" || activeEntity.type === "teacher")
+      ? mergedFreeSlot(data, overlay, activeEntity.type, activeEntity.id, slot)
+      : null;
+
+  function handleOccupiedClick(e) {
+    const { cellRect, gridRect } = captureRects(e);
+    onCellClick(slot, cellRect, gridRect);
   }
 
   if (mode === "school") {
     return (
       <td
         className={`grid-cell grid-cell--school${hasClasses ? " grid-cell--occupied" : " grid-cell--empty"}`}
-        onClick={handleClick}
+        onClick={hasClasses ? handleOccupiedClick : undefined}
       >
         {slot}
       </td>
     );
   }
+
+  if (!hasClasses) {
+    if (freeCode) {
+      return (
+        <td className="grid-cell grid-cell--free">
+          <div className="grid-free-line">{ACTIVITY_LABEL[freeCode] ?? freeCode}</div>
+        </td>
+      );
+    }
+    return <td className="grid-cell grid-cell--empty" />;
+  }
+
+  if (entityType === "activity") {
+    return (
+      <td
+        className="grid-cell grid-cell--active"
+        onClick={handleOccupiedClick}
+      >
+        <div className="grid-subject-line">{slot} ({labels.length})</div>
+      </td>
+    );
+  }
+
   const lines = formatLines(data, labels, entityType);
   return (
     <td
-      className={`grid-cell ${hasClasses ? "grid-cell--active" : "grid-cell--empty"}`}
-      onClick={handleClick}
+      className="grid-cell grid-cell--active"
+      onClick={handleOccupiedClick}
     >
       {lines.map((line, i) => (
         <div key={i} className="grid-subject-line">{line}</div>
@@ -58,7 +94,10 @@ function LessonCell({ slot, labels, mode, entityType, data, onCellClick }) {
   );
 }
 
-export default function TimetableGrid({ slotMap, data, mode, entityType, onCellClick }) {
+export default function TimetableGrid({
+  slotMap, data, overlay, activeEntity, mode, entityType,
+  onCellClick,
+}) {
   return (
     <div className="grid-wrap">
       <table className="timetable-grid">
@@ -78,21 +117,26 @@ export default function TimetableGrid({ slotMap, data, mode, entityType, onCellC
           </tr>
         </thead>
         <tbody>
-          {BLOCKS.map((block, idx) => {
-            const cell = (period) => (
-              <LessonCell
-                key={period}
-                slot={`${block}${period}`}
-                labels={slotMap[`${block}${period}`] ?? []}
-                mode={mode}
-                entityType={entityType}
-                data={data}
-                onCellClick={onCellClick}
-              />
-            );
+          {TIMETABLE_GRID.map((row, idx) => {
+            const cell = (period) => {
+              const slot = row[period - 1];
+              return (
+                <LessonCell
+                  key={period}
+                  slot={slot}
+                  labels={slotMap[slot] ?? []}
+                  mode={mode}
+                  entityType={entityType}
+                  data={data}
+                  overlay={overlay}
+                  activeEntity={activeEntity}
+                  onCellClick={onCellClick}
+                />
+              );
+            };
             return (
-              <tr key={block}>
-                <td className="grid-block-label">{block}</td>
+              <tr key={idx}>
+                <td className="grid-block-label">{idx + 1}</td>
                 {cell(1)}
                 {cell(2)}
                 <td className="grid-reg-cell">{REG_LETTERS[idx]}</td>

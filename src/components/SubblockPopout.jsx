@@ -43,9 +43,62 @@ function placeVertical(anchorTop) {
   return { top: Math.max(MARGIN, anchorTop - h), maxHeight: spaceAbove };
 }
 
-export default function SubblockPopout({ slot, cellRect, gridRect, data, slotMap, mode, onStudentSelect, onClose }) {
+export default function SubblockPopout({ slot, cellRect, gridRect, data, slotMap, mode, activeEntity, onStudentSelect, onClose }) {
   const [selected, setSelected] = useState(null); // { label, itemRect }
   const labels = slotMap[slot] ?? [];
+
+  // Activity mode: labels are prefixed entity IDs (s:10234 / t:BALAY).
+  if (mode === "entity" && activeEntity?.type === "activity") {
+    const rows = labels.map(key => {
+      const kind = key.startsWith("t:") ? "teacher" : "student";
+      const id = key.slice(2);
+      const name = kind === "teacher"
+        ? (data.teachers[id]?.name ?? id)
+        : (data.students[id]?.name ?? id);
+      return { kind, id, name };
+    }).sort((a, b) => a.name.localeCompare(b.name));
+
+    const pos = gridRect
+      ? { ...placeHorizontal(cellRect), top: gridRect.top + 4, maxHeight: gridRect.height - 8 }
+      : { ...placeHorizontal(cellRect), ...placeVertical(cellRect.top) };
+
+    return (
+      <div className="popout-overlay popout-overlay--transparent" onClick={onClose}>
+        <div
+          className="popout-panel"
+          style={{
+            position: "fixed",
+            left: pos.left,
+            top: pos.top,
+            minWidth: PANEL_MIN_W,
+            maxWidth: PANEL_MAX_W,
+            width: "max-content",
+            maxHeight: pos.maxHeight,
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="popout-header">
+            <span className="popout-title">{slot} ({rows.length})</span>
+            <button className="popout-close" onClick={onClose}>×</button>
+          </div>
+          <div className="popout-body">
+            {rows.length === 0 && <p className="popout-empty">No entries in this block.</p>}
+            {rows.map(r => (
+              <div
+                key={`${r.kind}:${r.id}`}
+                className="popout-student"
+                onClick={() => {
+                  if (r.kind === "student") { onStudentSelect(r.id); onClose(); }
+                }}
+              >
+                {r.name} <span className="popout-class-count">({r.kind})</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Entity mode with single subject → skip subject panel, jump to students.
   const directMode = mode === "entity" && labels.length === 1;
@@ -95,8 +148,8 @@ export default function SubblockPopout({ slot, cellRect, gridRect, data, slotMap
             left: directPos.left,
             top: directPos.top,
             minWidth: PANEL_MIN_W,
-          maxWidth: PANEL_MAX_W,
-          width: "max-content",
+            maxWidth: PANEL_MAX_W,
+            width: "max-content",
             maxHeight: directPos.maxHeight,
           }}
           onClick={e => e.stopPropagation()}

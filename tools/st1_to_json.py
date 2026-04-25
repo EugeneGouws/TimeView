@@ -24,6 +24,8 @@ SCHEMA_VERSION = "2.0"
 
 TIMETABLE_COL_RE = re.compile(r"^[A-H][1-9]$|^P[1-4]$")
 
+REG_CLASS_COL_IDX = 4  # Excel column E — values like "12R", "9C"
+
 FREE_PERIOD_CODES = {"FREE", "LIB", "EXTRA", "ST"}
 FREE_PERIOD_MAP = {"FREE": "STUDY", "LIB": "LIB", "EXTRA": "EXTRA", "ST": "STUDY"}
 
@@ -104,7 +106,9 @@ def build_timetable_json(input_path: Path, output_path: Path):
         else:
             name = None
 
-        students[sid] = {"name": name, "grade": str(grade)}
+        reg_raw = row.iloc[REG_CLASS_COL_IDX] if REG_CLASS_COL_IDX < len(row) else None
+        reg_class = str(reg_raw).strip() if pd.notna(reg_raw) else None
+        students[sid] = {"name": name, "grade": str(grade), "reg_class": reg_class}
 
         for col in tt_cols:
             cell = row.get(col)

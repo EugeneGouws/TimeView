@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AppProvider, useAppState } from "./store/appState";
 import TopBar from "./components/TopBar";
 import TimetableGrid from "./components/TimetableGrid";
+import TimetableHeader from "./components/TimetableHeader";
+import TimesGrid from "./components/TimesGrid";
 import SubblockPopout from "./components/SubblockPopout";
 import SearchBar from "./components/SearchBar";
 import {
@@ -9,15 +11,18 @@ import {
   getTeacherSlotMap,
   getStudentSlotMap,
   getSubjectSlotMap,
+  getActivitySlotMap,
 } from "./utils/timetableLayout";
 import { validate } from "./utils/schema";
 import { loadTimetable, saveTimetable } from "./utils/storage";
+import { loadOverlay, saveOverlay, ACTIVITY_LABEL } from "./utils/overlay";
 import "./App.css";
 
 function getEntityLabel(data, entity) {
   if (!entity || !data) return "";
   if (entity.type === "teacher") return data.teachers[entity.id]?.name ?? entity.id;
   if (entity.type === "student") return data.students[entity.id]?.name ?? entity.id;
+  if (entity.type === "activity") return ACTIVITY_LABEL[entity.id] ?? entity.id;
   return entity.id; // subject code is its own label
 }
 
@@ -25,6 +30,7 @@ function AppShell() {
   const { state, dispatch } = useAppState();
   const data = state.timetableData;
   const activeEntity = state.activeEntity;
+  const overlay = state.overlay;
 
   const [popout, setPopout] = useState(null); // { slot, cellRect }
   const hydrated = useRef(false);
@@ -35,6 +41,7 @@ function AppShell() {
       const { ok } = validate(stored);
       if (ok) dispatch({ type: "LOAD_TIMETABLE", payload: stored });
     }
+    dispatch({ type: "LOAD_OVERLAY", payload: loadOverlay() });
     hydrated.current = true;
   }, [dispatch]);
 
@@ -43,6 +50,11 @@ function AppShell() {
     if (data) saveTimetable(data);
   }, [data]);
 
+  useEffect(() => {
+    if (!hydrated.current) return;
+    saveOverlay(overlay);
+  }, [overlay]);
+
   const schoolSlotMap = useMemo(() => (data ? buildSlotMap(data) : {}), [data]);
 
   const entitySlotMap = useMemo(() => {
@@ -50,8 +62,9 @@ function AppShell() {
     const { type, id } = activeEntity;
     if (type === "teacher") return getTeacherSlotMap(data, id);
     if (type === "student") return getStudentSlotMap(data, id);
+    if (type === "activity") return getActivitySlotMap(data, overlay, id);
     return getSubjectSlotMap(data, id);
-  }, [data, activeEntity]);
+  }, [data, activeEntity, overlay]);
 
   const currentSlotMap = activeEntity ? entitySlotMap : schoolSlotMap;
   const entityLabel = getEntityLabel(data, activeEntity);
@@ -87,15 +100,25 @@ function AppShell() {
           </div>
         )}
         {data ? (
-          <TimetableGrid
-            slotMap={currentSlotMap}
-            data={data}
-            mode={activeEntity ? "entity" : "school"}
-            entityType={activeEntity?.type}
-            onCellClick={handleCellClick}
-          />
+          <>
+            <TimetableHeader data={data} activeEntity={activeEntity} />
+            <TimetableGrid
+              slotMap={currentSlotMap}
+              data={data}
+              overlay={overlay}
+              activeEntity={activeEntity}
+              mode={activeEntity ? "entity" : "school"}
+              entityType={activeEntity?.type}
+              onCellClick={handleCellClick}
+            />
+            <TimesGrid />
+          </>
         ) : (
-          <p className="no-data">No timetable loaded.</p>
+          <div className="empty-state">
+            <div className="empty-state-monogram">TW</div>
+            <p className="empty-state-heading">TimeView</p>
+            <p className="empty-state-sub">Upload a verified timetable to get started</p>
+          </div>
         )}
       </div>
       {popout && data && (
@@ -106,6 +129,7 @@ function AppShell() {
           data={data}
           slotMap={currentSlotMap}
           mode={activeEntity ? "entity" : "school"}
+          activeEntity={activeEntity}
           onStudentSelect={handleStudentSelect}
           onClose={() => setPopout(null)}
         />

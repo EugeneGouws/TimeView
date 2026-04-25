@@ -32,23 +32,6 @@
   gap: 8px;
 }
 
-.login-btn {
-  font-size: 13px;
-  padding: 6px 14px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  cursor: pointer;
-
-  &:hover {
-    background: var(--accent-bg);
-  }
-}
-
-.login-btn--active {
-  background: var(--accent-bg);
-  border-color: var(--accent-border);
-}
 
 #timetable-area {
   flex: 1;
@@ -57,10 +40,42 @@
   overflow: hidden;
 }
 
-.no-data {
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.empty-state-monogram {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Book Antiqua', 'Palatino Linotype', serif;
+  font-size: 22px;
+  font-weight: bold;
   color: var(--text);
-  font-size: 14px;
-  padding: 24px;
+}
+
+.empty-state-heading {
+  font-family: 'Book Antiqua', 'Palatino Linotype', serif;
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--text-h);
+  margin: 0;
+}
+
+.empty-state-sub {
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  margin: 0;
 }
 
 /* ── Search bar ────────────────────────────────────────────── */
@@ -152,6 +167,124 @@
   }
 }
 
+/* ── Timetable header ──────────────────────────────────────── */
+
+.tt-header {
+  flex-shrink: 0;
+  border: 1px solid #BBBBBB;
+  margin: 8px 8px 0;
+  background: #FFFFFF;
+}
+
+.tt-header-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  align-items: stretch;
+  border-bottom: 1px solid #BBBBBB;
+}
+
+.tt-header-row:last-child {
+  border-bottom: none;
+}
+
+.tt-header-date {
+  font-family: Arial, sans-serif;
+  font-size: 8pt;
+  text-align: right;
+  padding: 6px 10px;
+  align-self: center;
+}
+
+.tt-header-school {
+  font-family: 'Book Antiqua', 'Palatino Linotype', serif;
+  font-size: 16pt;
+  font-weight: bold;
+  text-align: center;
+  padding: 6px 0;
+  align-self: center;
+}
+
+.tt-header-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  font-family: Arial, sans-serif;
+  font-size: 8pt;
+  padding: 4px 8px;
+  gap: 2px 8px;
+  align-content: center;
+}
+
+.tt-header-meta-key {
+  font-weight: 600;
+}
+
+.tt-header-meta-val {
+  text-align: left;
+}
+
+.tt-header-name {
+  font-family: Arial, sans-serif;
+  font-size: 12pt;
+  background: #ECECEC;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+}
+
+.tt-header-title {
+  font-family: 'Book Antiqua', 'Palatino Linotype', serif;
+  font-size: 11pt;
+  font-weight: bold;
+  text-align: center;
+  align-self: center;
+  padding: 6px 0;
+}
+
+.tt-header-year {
+  font-family: Arial, sans-serif;
+  font-size: 10pt;
+  font-weight: bold;
+  text-align: right;
+  padding: 6px 10px;
+  align-self: center;
+}
+
+/* ── Times grid ────────────────────────────────────────────── */
+
+.times-grid {
+  border-collapse: collapse;
+  font-family: Arial, sans-serif;
+  font-size: 7pt;
+  width: auto;
+  margin: 4px 6px 6px;
+  flex-shrink: 0;
+}
+
+.times-grid th,
+.times-grid td {
+  border: 1px solid #999999;
+  padding: 2px 3px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.times-grid-rowlabel {
+  background: #ECECEC;
+  font-weight: bold;
+  text-align: center;
+  width: 90px;
+}
+
+.times-grid-celllabel {
+  font-weight: bold;
+  font-size: 7.5pt;
+}
+
+.times-grid-celltime {
+  font-size: 7pt;
+  margin-top: 1px;
+}
+
 /* ── Timetable grid ────────────────────────────────────────── */
 
 .grid-wrap {
@@ -239,7 +372,7 @@
   padding: 4px 6px;
   vertical-align: top;
   text-align: center;
-  min-height: 56px;
+  min-height: 76px;
   word-break: break-word;
   overflow-wrap: break-word;
 }
@@ -273,6 +406,20 @@
   }
 }
 
+.grid-cell--free {
+  background: var(--bg);
+  text-align: center;
+  font-style: italic;
+  color: #888;
+  font-size: 11px;
+}
+
+.grid-free-line {
+  font-style: italic;
+  font-size: 11px;
+  color: #888;
+}
+
 .grid-subject-line {
   font-size: 11px;
   line-height: 1.35;
@@ -287,6 +434,11 @@
 }
 
 /* ── Subblock popout ───────────────────────────────────────── */
+
+@keyframes popoutIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 .popout-overlay {
   position: fixed;
@@ -320,6 +472,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 201;
   overflow: hidden;
+  animation: popoutIn 140ms ease;
 }
 
 .popout-header {
@@ -418,14 +571,37 @@
 
 .upload-btn {
   font-size: 13px;
-  padding: 6px 14px;
-  border: 1px solid var(--border);
-  background: var(--bg);
+  font-family: Arial, sans-serif;
+  padding: 6px 18px;
+  border: 1px solid #2a2a2a;
+  background: #2a2a2a;
+  color: #fff;
   cursor: pointer;
+  letter-spacing: 0.03em;
 
   &:hover {
-    background: var(--accent-bg);
-    border-color: var(--accent-border);
+    background: #444;
+    border-color: #444;
+  }
+}
+
+.upload-btn--icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #2a2a2a;
+  background: #2a2a2a;
+  color: #fff;
+  cursor: pointer;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+
+  &:hover {
+    background: #444;
+    border-color: #444;
   }
 }
 

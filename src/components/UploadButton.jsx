@@ -2,14 +2,35 @@ import { useRef, useState } from "react";
 import { useAppState } from "../store/appState";
 import { validate, versionMismatch } from "../utils/schema";
 import { convertXlsxToTimetable } from "../utils/xlsxToTimetable";
+import LoginDialog from "./LoginDialog";
 
 export default function UploadButton() {
   const { state, dispatch } = useAppState();
   const inputRef = useRef(null);
   const [error, setError] = useState(null);
-  const [pending, setPending] = useState(null); // parsed JSON awaiting confirm
+  const [pending, setPending] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
 
-  const hidden = !state.authorized;
+  function handleButtonClick() {
+    setError(null);
+    if (!state.authorized) {
+      setShowLogin(true);
+    } else {
+      inputRef.current?.click();
+    }
+  }
+
+  async function handleLoginSuccess() {
+    setShowLogin(false);
+    try {
+      const res = await fetch("/data/timetable.json");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const parsed = await res.json();
+      handleParsed(parsed);
+    } catch (err) {
+      setError(`Could not load timetable: ${err.message}`);
+    }
+  }
 
   function handleParsed(parsed) {
     const { ok, errors } = validate(parsed);
@@ -63,27 +84,17 @@ export default function UploadButton() {
     setPending(null);
   }
 
-  function handleCancel() {
-    setPending(null);
-  }
-
   return (
-    <div
-      style={
-        hidden
-          ? { visibility: "hidden", pointerEvents: "none" }
-          : undefined
-      }
-    >
-      <button
-        className="upload-btn"
-        onClick={() => {
-          setError(null);
-          inputRef.current?.click();
-        }}
-      >
-        Upload
-      </button>
+    <div>
+      {state.timetableData ? (
+        <button className="upload-btn--icon" onClick={handleButtonClick} title="Replace timetable">
+          🔧
+        </button>
+      ) : (
+        <button className="upload-btn" onClick={handleButtonClick}>
+          Upload timetable
+        </button>
+      )}
 
       <input
         ref={inputRef}
@@ -98,19 +109,24 @@ export default function UploadButton() {
       {pending && (
         <div className="upload-modal-overlay">
           <div className="upload-modal">
-            <p>
-              <strong>Version mismatch</strong>
-            </p>
+            <p><strong>Version mismatch</strong></p>
             <p>
               File version <code>{pending.version}</code> does not match
               expected major version. Load anyway?
             </p>
             <div className="upload-modal-actions">
               <button onClick={handleConfirm}>Load anyway</button>
-              <button onClick={handleCancel}>Cancel</button>
+              <button onClick={() => setPending(null)}>Cancel</button>
             </div>
           </div>
         </div>
+      )}
+
+      {showLogin && (
+        <LoginDialog
+          onSuccess={handleLoginSuccess}
+          onClose={() => setShowLogin(false)}
+        />
       )}
     </div>
   );

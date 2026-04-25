@@ -7,6 +7,7 @@ import {
 
 const SCHEMA_VERSION = "2.0";
 const TT_COL_RE = /^[A-H][1-9]$|^P[1-4]$/;
+const REG_CLASS_COL_IDX = 4; // Excel column E — values like "12R", "9C"
 const FREE_CODES = new Set(["FREE", "LIB", "EXTRA", "ST"]);
 const FREE_MAP = { FREE: "STUDY", LIB: "LIB", EXTRA: "EXTRA", ST: "STUDY" };
 
@@ -52,6 +53,7 @@ export function convertXlsxToTimetable(arrayBuffer, filename = "ST1.xlsx") {
   if (!rows.length) throw new Error("Sheet is empty.");
 
   const headers = Object.keys(rows[0]);
+  const regClassHeader = headers[REG_CLASS_COL_IDX] ?? null;
   const ttCols = detectTimetableColumns(headers);
   if (!ttCols.length) {
     throw new Error("No timetable columns (A1–H9, P1–P4) detected in xlsx.");
@@ -81,7 +83,9 @@ export function convertXlsxToTimetable(arrayBuffer, filename = "ST1.xlsx") {
     if (surname != null && firstname != null) name = `${surname}, ${firstname}`;
     else if (surname != null) name = String(surname);
 
-    students[sid] = { name, grade: String(grade) };
+    const regRaw = regClassHeader ? row[regClassHeader] : null;
+    const regClass = regRaw != null ? String(regRaw).trim() : null;
+    students[sid] = { name, grade: String(grade), reg_class: regClass };
 
     for (const col of ttCols) {
       const cell = row[col];

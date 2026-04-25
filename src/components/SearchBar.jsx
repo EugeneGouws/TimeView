@@ -1,22 +1,29 @@
 import { useState, useMemo } from "react";
 import { useAppState } from "../store/appState";
 import { subjectDisplay } from "../utils/subjectNames";
+import { ACTIVITY_LABEL } from "../utils/overlay";
+
+const ACTIVITY_CODES = ["LIB", "STUDY", "BAT", "MEETING"];
 
 function buildList(data, type) {
   if (type === "teacher") {
     return Object.entries(data.teachers)
-      .map(([id, t]) => ({ id, label: t.name }))
+      .map(([id, t]) => ({ id, label: t.name, kind: "teacher" }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }
   if (type === "student") {
     return Object.entries(data.students)
-      .map(([id, s]) => ({ id, label: s.name ? `${s.name} (${id})` : id }))
+      .map(([id, s]) => ({ id, label: s.name ? `${s.name} (${id})` : id, kind: "student" }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }
   const codes = new Set(Object.values(data.subjects).map(s => s.name));
-  return [...codes]
-    .map(code => ({ id: code, label: `${subjectDisplay(code)} (${code})` }))
+  const subjects = [...codes]
+    .map(code => ({ id: code, label: `${subjectDisplay(code)} (${code})`, kind: "subject" }))
     .sort((a, b) => a.label.localeCompare(b.label));
+  const activities = ACTIVITY_CODES.map(code => ({
+    id: code, label: ACTIVITY_LABEL[code], kind: "activity",
+  }));
+  return [...activities, ...subjects];
 }
 
 function EntitySearch({ type, placeholder, data, onSelect }) {
@@ -30,7 +37,7 @@ function EntitySearch({ type, placeholder, data, onSelect }) {
   }, [fullList, search]);
 
   function handleSelect(item) {
-    onSelect(type, item.id);
+    onSelect(item.kind ?? type, item.id);
     setSearch("");
     setOpen(false);
   }
@@ -75,7 +82,7 @@ export default function SearchBar() {
     <div className="search-bar">
       <EntitySearch type="student" placeholder="Student" data={data} onSelect={handleSelect} />
       <EntitySearch type="teacher" placeholder="Teacher" data={data} onSelect={handleSelect} />
-      <EntitySearch type="subject" placeholder="Subject" data={data} onSelect={handleSelect} />
+      <EntitySearch type="subject" placeholder="Subject / Activity" data={data} onSelect={handleSelect} />
     </div>
   );
 }

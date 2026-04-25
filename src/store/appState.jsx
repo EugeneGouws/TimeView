@@ -1,9 +1,11 @@
 import { createContext, useContext, useReducer } from "react";
+import { EMPTY_OVERLAY } from "../utils/overlay";
 
 const initialState = {
   authorized: false,
   timetableData: null,
-  activeEntity: null, // { type: "teacher"|"student"|"subject", id: string } | null
+  activeEntity: null, // { type: "teacher"|"student"|"subject"|"activity", id: string } | null
+  overlay: EMPTY_OVERLAY,
 };
 
 function reducer(state, action) {
@@ -16,8 +18,10 @@ function reducer(state, action) {
       return { ...state, activeEntity: action.payload };
     case "CLEAR_ACTIVE_ENTITY":
       return { ...state, activeEntity: null };
-    case "TOGGLE_AUTHORIZED":
-      return { ...state, authorized: !state.authorized };
+    case "SET_AUTHORIZED":
+      return { ...state, authorized: action.payload };
+    case "LOAD_OVERLAY":
+      return { ...state, overlay: action.payload };
     default:
       return state;
   }
