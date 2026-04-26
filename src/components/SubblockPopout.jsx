@@ -49,14 +49,19 @@ export default function SubblockPopout({ slot, cellRect, gridRect, data, slotMap
 
   // Activity mode: labels are prefixed entity IDs (s:10234 / t:BALAY).
   if (mode === "entity" && activeEntity?.type === "activity") {
-    const rows = labels.map(key => {
-      const kind = key.startsWith("t:") ? "teacher" : "student";
+    const teachers = [];
+    const students = [];
+    for (const key of labels) {
       const id = key.slice(2);
-      const name = kind === "teacher"
-        ? (data.teachers[id]?.name ?? id)
-        : (data.students[id]?.name ?? id);
-      return { kind, id, name };
-    }).sort((a, b) => a.name.localeCompare(b.name));
+      if (key.startsWith("t:")) {
+        teachers.push({ id, name: data.teachers[id]?.name ?? id });
+      } else {
+        students.push({ id, name: data.students[id]?.name ?? id });
+      }
+    }
+    teachers.sort((a, b) => a.name.localeCompare(b.name));
+    students.sort((a, b) => a.name.localeCompare(b.name));
+    const total = teachers.length + students.length;
 
     const pos = gridRect
       ? { ...placeHorizontal(cellRect), top: gridRect.top + 4, maxHeight: gridRect.height - 8 }
@@ -78,20 +83,23 @@ export default function SubblockPopout({ slot, cellRect, gridRect, data, slotMap
           onClick={e => e.stopPropagation()}
         >
           <div className="popout-header">
-            <span className="popout-title">{slot} ({rows.length})</span>
+            <span className="popout-title">{slot} ({total})</span>
             <button className="popout-close" onClick={onClose}>×</button>
           </div>
           <div className="popout-body">
-            {rows.length === 0 && <p className="popout-empty">No entries in this block.</p>}
-            {rows.map(r => (
+            {total === 0 && <p className="popout-empty">No entries in this block.</p>}
+            {teachers.map(t => (
+              <div key={`t:${t.id}`} className="popout-student popout-student--teacher">
+                {t.name}
+              </div>
+            ))}
+            {students.map(s => (
               <div
-                key={`${r.kind}:${r.id}`}
+                key={`s:${s.id}`}
                 className="popout-student"
-                onClick={() => {
-                  if (r.kind === "student") { onStudentSelect(r.id); onClose(); }
-                }}
+                onClick={() => { onStudentSelect(s.id); onClose(); }}
               >
-                {r.name} <span className="popout-class-count">({r.kind})</span>
+                {s.name}
               </div>
             ))}
           </div>

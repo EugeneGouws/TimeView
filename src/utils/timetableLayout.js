@@ -59,9 +59,9 @@ export function getStudentSlotMap(data, studentId) {
 }
 
 // { timeslot: [entityId, ...] } — all students/teachers assigned a given
-// free-activity code in that slot, base + overlay combined. Entity IDs are
-// prefixed `s:` or `t:` so downstream callers can distinguish.
-export function getActivitySlotMap(data, overlay, code) {
+// free-activity code in that slot. Entity IDs are prefixed `s:` or `t:` so
+// downstream callers can distinguish.
+export function getActivitySlotMap(data, code) {
   const map = {};
   function add(slot, key) {
     (map[slot] ??= []).push(key);
@@ -71,12 +71,6 @@ export function getActivitySlotMap(data, overlay, code) {
     for (const [slot, c] of Object.entries(slots)) if (c === code) add(slot, `s:${sid}`);
   }
   for (const [tid, slots] of Object.entries(base.teachers ?? {})) {
-    for (const [slot, c] of Object.entries(slots)) if (c === code) add(slot, `t:${tid}`);
-  }
-  for (const [sid, slots] of Object.entries(overlay?.students ?? {})) {
-    for (const [slot, c] of Object.entries(slots)) if (c === code) add(slot, `s:${sid}`);
-  }
-  for (const [tid, slots] of Object.entries(overlay?.teachers ?? {})) {
     for (const [slot, c] of Object.entries(slots)) if (c === code) add(slot, `t:${tid}`);
   }
   for (const slot of Object.keys(map)) {

@@ -550,11 +550,6 @@
   color: var(--text);
 }
 
-.popout-students {
-  padding: 4px 0 4px 24px;
-  background: var(--code-bg);
-}
-
 .popout-student {
   font-size: 12px;
   padding: 3px 14px;
@@ -564,6 +559,16 @@
   &:hover {
     background: var(--accent-bg);
     text-decoration: underline;
+  }
+}
+
+.popout-student--teacher {
+  font-weight: 700;
+  cursor: default;
+
+  &:hover {
+    background: transparent;
+    text-decoration: none;
   }
 }
 

@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useAppState } from "../store/appState";
 import { subjectDisplay } from "../utils/subjectNames";
-import { ACTIVITY_LABEL } from "../utils/overlay";
+import { ACTIVITY_LABEL } from "../utils/activityLabels";
 
 const ACTIVITY_CODES = ["LIB", "STUDY", "BAT", "MEETING"];
 

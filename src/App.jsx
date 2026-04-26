@@ -15,7 +15,7 @@ import {
 } from "./utils/timetableLayout";
 import { validate } from "./utils/schema";
 import { loadTimetable, saveTimetable } from "./utils/storage";
-import { loadOverlay, saveOverlay, ACTIVITY_LABEL } from "./utils/overlay";
+import { ACTIVITY_LABEL } from "./utils/activityLabels";
 import "./App.css";
 
 function getEntityLabel(data, entity) {
@@ -30,7 +30,6 @@ function AppShell() {
   const { state, dispatch } = useAppState();
   const data = state.timetableData;
   const activeEntity = state.activeEntity;
-  const overlay = state.overlay;
 
   const [popout, setPopout] = useState(null); // { slot, cellRect }
   const hydrated = useRef(false);
@@ -41,7 +40,6 @@ function AppShell() {
       const { ok } = validate(stored);
       if (ok) dispatch({ type: "LOAD_TIMETABLE", payload: stored });
     }
-    dispatch({ type: "LOAD_OVERLAY", payload: loadOverlay() });
     hydrated.current = true;
   }, [dispatch]);
 
@@ -50,11 +48,6 @@ function AppShell() {
     if (data) saveTimetable(data);
   }, [data]);
 
-  useEffect(() => {
-    if (!hydrated.current) return;
-    saveOverlay(overlay);
-  }, [overlay]);
-
   const schoolSlotMap = useMemo(() => (data ? buildSlotMap(data) : {}), [data]);
 
   const entitySlotMap = useMemo(() => {
@@ -62,9 +55,9 @@ function AppShell() {
     const { type, id } = activeEntity;
     if (type === "teacher") return getTeacherSlotMap(data, id);
     if (type === "student") return getStudentSlotMap(data, id);
-    if (type === "activity") return getActivitySlotMap(data, overlay, id);
+    if (type === "activity") return getActivitySlotMap(data, id);
     return getSubjectSlotMap(data, id);
-  }, [data, activeEntity, overlay]);
+  }, [data, activeEntity]);
 
   const currentSlotMap = activeEntity ? entitySlotMap : schoolSlotMap;
   const entityLabel = getEntityLabel(data, activeEntity);
@@ -105,7 +98,6 @@ function AppShell() {
             <TimetableGrid
               slotMap={currentSlotMap}
               data={data}
-              overlay={overlay}
               activeEntity={activeEntity}
               mode={activeEntity ? "entity" : "school"}
               entityType={activeEntity?.type}

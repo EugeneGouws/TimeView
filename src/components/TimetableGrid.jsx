@@ -1,6 +1,13 @@
 import { TIMETABLE_GRID } from "../utils/timetableLayout";
 import { subjectDisplay } from "../utils/subjectNames";
-import { ACTIVITY_LABEL, mergedFreeSlot } from "../utils/overlay";
+import { ACTIVITY_LABEL } from "../utils/activityLabels";
+
+function freeSlotCode(data, entityType, entityId, slot) {
+  const bucket = entityType === "student"
+    ? data?.free_periods?.students
+    : data?.free_periods?.teachers;
+  return bucket?.[entityId]?.[slot] ?? null;
+}
 
 const REG_LETTERS = ["R", "E", "G", "", "R", "E", "G", ""];
 const BREAK_LETTERS = ["", "B", "R", "E", "A", "K", "", ""];
@@ -32,7 +39,7 @@ function captureRects(e) {
 }
 
 function LessonCell({
-  slot, labels, mode, entityType, data, overlay, activeEntity,
+  slot, labels, mode, entityType, data, activeEntity,
   onCellClick,
 }) {
   const hasClasses = labels.length > 0;
@@ -40,7 +47,7 @@ function LessonCell({
   // Free-period activity for this slot (entity mode, student/teacher).
   const freeCode =
     mode === "entity" && activeEntity && (activeEntity.type === "student" || activeEntity.type === "teacher")
-      ? mergedFreeSlot(data, overlay, activeEntity.type, activeEntity.id, slot)
+      ? freeSlotCode(data, activeEntity.type, activeEntity.id, slot)
       : null;
 
   function handleOccupiedClick(e) {
@@ -95,7 +102,7 @@ function LessonCell({
 }
 
 export default function TimetableGrid({
-  slotMap, data, overlay, activeEntity, mode, entityType,
+  slotMap, data, activeEntity, mode, entityType,
   onCellClick,
 }) {
   return (
@@ -128,7 +135,6 @@ export default function TimetableGrid({
                   mode={mode}
                   entityType={entityType}
                   data={data}
-                  overlay={overlay}
                   activeEntity={activeEntity}
                   onCellClick={onCellClick}
                 />
