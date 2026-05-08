@@ -20,9 +20,15 @@ import "./App.css";
 
 function getEntityLabel(data, entity) {
   if (!entity || !data) return "";
-  if (entity.type === "teacher") return data.teachers[entity.id]?.name ?? entity.id;
+  if (entity.type === "teacher") {
+    const t = data.teachers[entity.id];
+    return t?.display_name ?? t?.surname ?? entity.id;
+  }
   if (entity.type === "student") return data.students[entity.id]?.name ?? entity.id;
-  if (entity.type === "activity") return ACTIVITY_LABEL[entity.id] ?? entity.id;
+  if (entity.type === "activity") {
+    if (entity.id === "STUDY") return "Study / Free";
+    return ACTIVITY_LABEL[entity.id] ?? entity.id;
+  }
   return entity.id; // subject code is its own label
 }
 

@@ -303,7 +303,7 @@
 
 .timetable-grid th,
 .timetable-grid td {
-  border: 1px solid var(--border);
+  border: 1px solid #aaaaaa;
 }
 
 .grid-day-header {
@@ -431,6 +431,16 @@
   margin-top: 6px;
   padding-top: 4px;
   border-top: 1px dashed rgba(0, 0, 0, 0.08);
+}
+
+.grid-subject-line--bold {
+  font-weight: 600;
+}
+
+.grid-overflow {
+  font-style: italic;
+  color: var(--text);
+  font-size: 10px;
 }
 
 /* ── Subblock popout ───────────────────────────────────────── */

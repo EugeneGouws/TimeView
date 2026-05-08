@@ -48,7 +48,7 @@ export function getTeacherSlotMap(data, teacherId) {
   return map;
 }
 
-// { timeslot: [label] } — one student (direct per-student index)
+// { timeslot: [label] } — one student
 export function getStudentSlotMap(data, studentId) {
   const slots = data.student_slots?.[studentId] ?? {};
   const map = {};
@@ -67,11 +67,13 @@ export function getActivitySlotMap(data, code) {
     (map[slot] ??= []).push(key);
   }
   const base = data?.free_periods ?? { students: {}, teachers: {} };
+  // STUDY merges student STUDY + teacher FREE into one view
+  const teacherCode = code === "STUDY" ? "FREE" : code;
   for (const [sid, slots] of Object.entries(base.students ?? {})) {
     for (const [slot, c] of Object.entries(slots)) if (c === code) add(slot, `s:${sid}`);
   }
   for (const [tid, slots] of Object.entries(base.teachers ?? {})) {
-    for (const [slot, c] of Object.entries(slots)) if (c === code) add(slot, `t:${tid}`);
+    for (const [slot, c] of Object.entries(slots)) if (c === teacherCode) add(slot, `t:${tid}`);
   }
   for (const slot of Object.keys(map)) {
     map[slot] = Array.from(new Set(map[slot]));

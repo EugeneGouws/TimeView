@@ -16,7 +16,8 @@ function formatLines(data, labels, entityType) {
   return labels.map(label => {
     const subj = data.subjects[label];
     const name = subjectDisplay(subj.name);
-    const teacherName = subj.teacher ? (data.teachers[subj.teacher]?.name ?? "") : "";
+    const t = subj.teacher ? data.teachers[subj.teacher] : null;
+    const teacherName = t ? (t.display_name ?? t.surname ?? "") : "";
     if (entityType === "teacher") return `${name}  Gr${subj.grade}`;
     if (entityType === "student") return `${name}  ${teacherName}`;
     return `${name}  ${teacherName}  Gr${subj.grade}`;
@@ -78,11 +79,65 @@ function LessonCell({
   }
 
   if (entityType === "activity") {
+    const activityId = activeEntity?.id;
+    const TEACHER_NAME_CODES = ["LIB", "BAT", "MEETING"];
+
+    if (TEACHER_NAME_CODES.includes(activityId)) {
+      const teacherNames = labels
+        .filter(l => l.startsWith("t:"))
+        .map(l => {
+          const t = data.teachers[l.slice(2)];
+          return t ? (t.display_name ?? t.surname) : l;
+        });
+      const total = teacherNames.length;
+      if (total === 0) {
+        return (
+          <td className="grid-cell grid-cell--active" onClick={handleOccupiedClick}>
+            <div className="grid-subject-line">{slot} ({labels.length})</div>
+          </td>
+        );
+      }
+      const shown = total > 3 ? teacherNames.slice(0, 2) : teacherNames;
+      const overflow = total > 3 ? total - 2 : 0;
+      return (
+        <td className="grid-cell grid-cell--active" onClick={handleOccupiedClick}>
+          {shown.map((name, i) => <div key={i} className="grid-subject-line">{name}</div>)}
+          {overflow > 0 && <div className="grid-subject-line grid-overflow">({overflow} more)</div>}
+        </td>
+      );
+    }
+
+    if (activityId === "STUDY") {
+      const tEntries = labels
+        .filter(l => l.startsWith("t:"))
+        .map(l => {
+          const t = data.teachers[l.slice(2)];
+          return { name: t ? (t.display_name ?? t.surname) : l, teacher: true };
+        });
+      const sEntries = labels
+        .filter(l => l.startsWith("s:"))
+        .map(l => {
+          const s = data.students[l.slice(2)];
+          return { name: s?.name ?? l, teacher: false };
+        });
+      const all = [...tEntries, ...sEntries];
+      const total = all.length;
+      return (
+        <td className="grid-cell grid-cell--active" onClick={handleOccupiedClick}>
+          {total > 3
+            ? <div className="grid-subject-line">{slot} ({total})</div>
+            : all.map((item, i) => (
+                <div key={i} className={`grid-subject-line${item.teacher ? " grid-subject-line--bold" : ""}`}>
+                  {item.name}
+                </div>
+              ))
+          }
+        </td>
+      );
+    }
+
     return (
-      <td
-        className="grid-cell grid-cell--active"
-        onClick={handleOccupiedClick}
-      >
+      <td className="grid-cell grid-cell--active" onClick={handleOccupiedClick}>
         <div className="grid-subject-line">{slot} ({labels.length})</div>
       </td>
     );

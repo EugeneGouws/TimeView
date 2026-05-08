@@ -54,7 +54,8 @@ export default function SubblockPopout({ slot, cellRect, gridRect, data, slotMap
     for (const key of labels) {
       const id = key.slice(2);
       if (key.startsWith("t:")) {
-        teachers.push({ id, name: data.teachers[id]?.name ?? id });
+        const t = data.teachers[id];
+        teachers.push({ id, name: t ? (t.display_name ?? t.surname ?? id) : id });
       } else {
         students.push({ id, name: data.students[id]?.name ?? id });
       }
@@ -270,9 +271,8 @@ export default function SubblockPopout({ slot, cellRect, gridRect, data, slotMap
           )}
           {labels.map(label => {
             const subj = data.subjects[label];
-            const teacherName = subj.teacher
-              ? (data.teachers[subj.teacher]?.name ?? "")
-              : "";
+            const tObj = subj.teacher ? data.teachers[subj.teacher] : null;
+            const teacherName = tObj ? (tObj.display_name ?? tObj.surname ?? "") : "";
             const count = rosterAtSlot(data, label, slot).length;
             const isActive = selected?.label === label;
             return (

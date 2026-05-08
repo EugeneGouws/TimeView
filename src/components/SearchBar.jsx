@@ -8,7 +8,7 @@ const ACTIVITY_CODES = ["LIB", "STUDY", "BAT", "MEETING"];
 function buildList(data, type) {
   if (type === "teacher") {
     return Object.entries(data.teachers)
-      .map(([id, t]) => ({ id, label: t.name, kind: "teacher" }))
+      .map(([id, t]) => ({ id, label: t.display_name ?? t.surname ?? id, kind: "teacher" }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }
   if (type === "student") {
@@ -21,7 +21,9 @@ function buildList(data, type) {
     .map(code => ({ id: code, label: `${subjectDisplay(code)} (${code})`, kind: "subject" }))
     .sort((a, b) => a.label.localeCompare(b.label));
   const activities = ACTIVITY_CODES.map(code => ({
-    id: code, label: ACTIVITY_LABEL[code], kind: "activity",
+    id: code,
+    label: code === "STUDY" ? "Study / Free" : ACTIVITY_LABEL[code],
+    kind: "activity",
   }));
   return [...activities, ...subjects];
 }

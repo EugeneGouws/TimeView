@@ -94,21 +94,6 @@ export function validate(json) {
     }
   }
 
-  // Closure — student_slots reference valid students, timeslots, subjects
-  for (const [sid, slots] of Object.entries(json.student_slots || {})) {
-    if (!studentSet.has(String(sid))) {
-      errors.push(`student_slots: student "${sid}" not in students.`);
-    }
-    for (const [slot, label] of Object.entries(slots)) {
-      if (!timeslotSet.has(slot)) {
-        errors.push(`student_slots[${sid}]: unknown timeslot "${slot}".`);
-      }
-      if (!subjectSet.has(label)) {
-        errors.push(`student_slots[${sid}][${slot}]: subject "${label}" not in subjects.`);
-      }
-    }
-  }
-
   return { ok: errors.length === 0, errors };
 }
 

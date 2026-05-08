@@ -1,4 +1,4 @@
-const KEY = "timeview.timetable.v2";
+const KEY = "timeview.timetable.v3";
 
 export function saveTimetable(data) {
   try {

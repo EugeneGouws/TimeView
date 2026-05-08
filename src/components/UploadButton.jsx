@@ -20,16 +20,9 @@ export default function UploadButton() {
     }
   }
 
-  async function handleLoginSuccess() {
+  function handleLoginSuccess() {
     setShowLogin(false);
-    try {
-      const res = await fetch("/data/timetable.json");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const parsed = await res.json();
-      handleParsed(parsed);
-    } catch (err) {
-      setError(`Could not load timetable: ${err.message}`);
-    }
+    inputRef.current?.click();
   }
 
   function handleParsed(parsed) {
