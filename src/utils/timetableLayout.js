@@ -31,7 +31,7 @@ export function buildSlotMap(data) {
     }
   }
   for (const slot of Object.keys(map)) {
-    map[slot] = sortLabels(map[slot], data.subjects);
+    map[slot] = sortLabels(map[slot], data.lessons);
   }
   return map;
 }
@@ -39,7 +39,7 @@ export function buildSlotMap(data) {
 // { timeslot: [label, ...] } — one teacher
 export function getTeacherSlotMap(data, teacherId) {
   const map = {};
-  for (const [label, subj] of Object.entries(data.subjects)) {
+  for (const [label, subj] of Object.entries(data.lessons)) {
     if (subj.teacher !== teacherId) continue;
     for (const slot of data.placements[label] ?? []) {
       (map[slot] ??= []).push(label);
@@ -84,7 +84,7 @@ export function getActivitySlotMap(data, code) {
 // { timeslot: [label, ...] } — all instances of a subject code
 export function getSubjectSlotMap(data, subjectCode) {
   const map = {};
-  for (const [label, subj] of Object.entries(data.subjects)) {
+  for (const [label, subj] of Object.entries(data.lessons)) {
     if (subj.name !== subjectCode) continue;
     for (const slot of data.placements[label] ?? []) {
       (map[slot] ??= []).push(label);

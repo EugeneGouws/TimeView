@@ -144,7 +144,7 @@ export default function SubblockPopout({ slot, cellRect, gridRect, data, slotMap
   if (directMode) {
     const label = labels[0];
     const students = rosterAtSlot(data, label, slot);
-    const subj = data.subjects[label];
+    const subj = data.lessons[label];
 
     const directPos = placeStudentPanel(cellRect, cellRect);
 
@@ -227,7 +227,7 @@ export default function SubblockPopout({ slot, cellRect, gridRect, data, slotMap
       >
         <div className="popout-header">
           <span className="popout-title">
-            {subjectDisplay(data.subjects[selected.label]?.name)} Gr{data.subjects[selected.label]?.grade}
+            {subjectDisplay(data.lessons[selected.label]?.name)} Gr{data.lessons[selected.label]?.grade}
           </span>
           <span className="popout-class-count">({students.length})</span>
         </div>
@@ -270,7 +270,7 @@ export default function SubblockPopout({ slot, cellRect, gridRect, data, slotMap
             <p className="popout-empty">No classes in this block.</p>
           )}
           {labels.map(label => {
-            const subj = data.subjects[label];
+            const subj = data.lessons[label];
             const tObj = subj.teacher ? data.teachers[subj.teacher] : null;
             const teacherName = tObj ? (tObj.display_name ?? tObj.surname ?? "") : "";
             const count = rosterAtSlot(data, label, slot).length;

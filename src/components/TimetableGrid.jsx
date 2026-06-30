@@ -14,7 +14,7 @@ const BREAK_LETTERS = ["", "B", "R", "E", "A", "K", "", ""];
 
 function formatLines(data, labels, entityType) {
   return labels.map(label => {
-    const subj = data.subjects[label];
+    const subj = data.lessons[label];
     const name = subjectDisplay(subj.name);
     const t = subj.teacher ? data.teachers[subj.teacher] : null;
     const teacherName = t ? (t.display_name ?? t.surname ?? "") : "";

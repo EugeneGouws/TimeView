@@ -2,26 +2,15 @@ import { useRef, useState } from "react";
 import { useAppState } from "../store/appState";
 import { validate, versionMismatch } from "../utils/schema";
 import { convertXlsxToTimetable } from "../utils/xlsxToTimetable";
-import LoginDialog from "./LoginDialog";
 
 export default function UploadButton() {
   const { state, dispatch } = useAppState();
   const inputRef = useRef(null);
   const [error, setError] = useState(null);
   const [pending, setPending] = useState(null);
-  const [showLogin, setShowLogin] = useState(false);
 
   function handleButtonClick() {
     setError(null);
-    if (!state.authorized) {
-      setShowLogin(true);
-    } else {
-      inputRef.current?.click();
-    }
-  }
-
-  function handleLoginSuccess() {
-    setShowLogin(false);
     inputRef.current?.click();
   }
 
@@ -81,7 +70,7 @@ export default function UploadButton() {
     <div>
       {state.timetableData ? (
         <button className="upload-btn--icon" onClick={handleButtonClick} title="Replace timetable">
-          🔧
+          ⚙️
         </button>
       ) : (
         <button className="upload-btn" onClick={handleButtonClick}>
@@ -113,13 +102,6 @@ export default function UploadButton() {
             </div>
           </div>
         </div>
-      )}
-
-      {showLogin && (
-        <LoginDialog
-          onSuccess={handleLoginSuccess}
-          onClose={() => setShowLogin(false)}
-        />
       )}
     </div>
   );

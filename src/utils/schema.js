@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = "2.0";
+export const SCHEMA_VERSION = "3.0";
 
 const REQUIRED_KEYS = [
   "version",
@@ -7,7 +7,7 @@ const REQUIRED_KEYS = [
   "timeslots",
   "students",
   "teachers",
-  "subjects",
+  "lessons",
   "enrolments",
   "placements",
   "student_slots",
@@ -72,13 +72,13 @@ export function validate(json) {
     }
   }
 
-  // Entity closure — enrolments reference valid subjects and students
-  const subjectSet = new Set(Object.keys(json.subjects));
+  // Entity closure — enrolments reference valid lessons and students
+  const subjectSet = new Set(Object.keys(json.lessons));
   const studentSet = new Set(Object.keys(json.students));
 
   for (const [code, studentIds] of Object.entries(json.enrolments)) {
     if (!subjectSet.has(code)) {
-      errors.push(`enrolments: subject "${code}" not in subjects.`);
+      errors.push(`enrolments: lesson "${code}" not in lessons.`);
     }
     for (const sid of studentIds) {
       if (!studentSet.has(String(sid))) {
@@ -87,10 +87,10 @@ export function validate(json) {
     }
   }
 
-  // Entity closure — placements reference valid subjects
+  // Entity closure — placements reference valid lessons
   for (const code of Object.keys(json.placements)) {
     if (!subjectSet.has(code)) {
-      errors.push(`placements: subject "${code}" not in subjects.`);
+      errors.push(`placements: lesson "${code}" not in lessons.`);
     }
   }
 

@@ -16,7 +16,7 @@ function buildList(data, type) {
       .map(([id, s]) => ({ id, label: s.name ? `${s.name} (${id})` : id, kind: "student" }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }
-  const codes = new Set(Object.values(data.subjects).map(s => s.name));
+  const codes = new Set(Object.values(data.lessons).map(s => s.name));
   const subjects = [...codes]
     .map(code => ({ id: code, label: `${subjectDisplay(code)} (${code})`, kind: "subject" }))
     .sort((a, b) => a.label.localeCompare(b.label));

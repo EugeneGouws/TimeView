@@ -5,7 +5,7 @@ import {
   getM,
 } from "./subjectsData";
 
-const SCHEMA_VERSION = "2.0";
+const SCHEMA_VERSION = "3.0";
 const TT_COL_RE = /^[A-H][1-9]$|^P[1-4]$/;
 const REG_CLASS_COL_IDX = 4; // Excel column E — values like "12R", "9C"
 const FREE_CODES = new Set(["FREE", "LIB", "EXTRA", "ST"]);
@@ -134,7 +134,7 @@ export function convertXlsxToTimetable(arrayBuffer, filename = "ST1.xlsx") {
     timeslots: ttCols,
     students,
     teachers,
-    subjects,
+    lessons: subjects,
     enrolments,
     placements,
     student_slots: studentSlots,

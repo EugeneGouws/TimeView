@@ -1,7 +1,6 @@
 import { createContext, useContext, useReducer } from "react";
 
 const initialState = {
-  authorized: false,
   timetableData: null,
   activeEntity: null, // { type: "teacher"|"student"|"subject"|"activity", id: string } | null
 };
@@ -16,8 +15,6 @@ function reducer(state, action) {
       return { ...state, activeEntity: action.payload };
     case "CLEAR_ACTIVE_ENTITY":
       return { ...state, activeEntity: null };
-    case "SET_AUTHORIZED":
-      return { ...state, authorized: action.payload };
     default:
       return state;
   }
