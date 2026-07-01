@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-const SCHOOL_NAME = "Crawford International La Lucia";
+const SCHOOL_NAME = "Demo School";
 
 function formatDate(d) {
   const dd = String(d.getDate()).padStart(2, "0");

@@ -18,7 +18,10 @@
       "Bash(python tt1_to_json.py --st1-json ../data/timetable.json --input ../data/TT1.xlsx)",
       "Bash(python -c ' *, and nevermind subjects.py. that information is captured in the timetable schema)",
       "Bash(python *)",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "PowerShell(Start-Process \"http://localhost:5173\")",
+      "Bash(curl -s \"E:/TimeEduSuite/TimeView/demott.json\")",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('public/demo-timetable.json','utf8'\\)\\)\")"
     ]
   }
 }

@@ -44,9 +44,22 @@ function AppShell() {
     const stored = loadTimetable();
     if (stored) {
       const { ok } = validate(stored);
-      if (ok) dispatch({ type: "LOAD_TIMETABLE", payload: stored });
+      if (ok) {
+        dispatch({ type: "LOAD_TIMETABLE", payload: stored });
+        hydrated.current = true;
+        return;
+      }
     }
-    hydrated.current = true;
+    fetch(`${import.meta.env.BASE_URL}demo-timetable.json`)
+      .then((res) => res.json())
+      .then((demo) => {
+        const { ok } = validate(demo);
+        if (ok) dispatch({ type: "LOAD_TIMETABLE", payload: demo });
+      })
+      .catch(() => {})
+      .finally(() => {
+        hydrated.current = true;
+      });
   }, [dispatch]);
 
   useEffect(() => {
