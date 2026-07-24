@@ -39,6 +39,53 @@ function captureRects(e) {
   };
 }
 
+// Comparison overlay: one cell shows every source's lessons colour-coded, and
+// highlights slots where all teacher/student sources are free.
+function OverlayCell({ slot, sources, data, onCellClick }) {
+  const perSource = sources.map(src => {
+    const labels = src.slotMap[slot] ?? [];
+    const isPersonal = src.entity.type === "student" || src.entity.type === "teacher";
+    const freeCode = isPersonal && labels.length === 0
+      ? freeSlotCode(data, src.entity.type, src.entity.id, slot)
+      : null;
+    return {
+      colorIdx: src.colorIdx,
+      lines: labels.length ? formatLines(data, labels, src.entity.type) : [],
+      isPersonal,
+      freeCode,
+      busy: labels.length > 0,
+    };
+  });
+
+  const anyBusy = perSource.some(p => p.busy);
+  const personalCount = perSource.filter(p => p.isPersonal).length;
+  const sharedFree = !anyBusy && personalCount >= 2;
+
+  function handleClick(e) {
+    const { cellRect, gridRect } = captureRects(e);
+    onCellClick(slot, cellRect, gridRect);
+  }
+
+  const cls = `grid-cell grid-cell--overlay${sharedFree ? " grid-cell--shared-free" : ""}${anyBusy ? " grid-cell--clickable" : ""}`;
+  return (
+    <td className={cls} onClick={anyBusy ? handleClick : undefined}>
+      {perSource.map((p, si) => (
+        <div key={si} className={`grid-overlay-group grid-line--c${p.colorIdx}`}>
+          {p.busy
+            ? p.lines.map((line, i) => (
+                <div key={i} className="grid-subject-line">{line}</div>
+              ))
+            : p.isPersonal && (
+                <div className="grid-subject-line grid-overlay-free">
+                  {p.freeCode ? (ACTIVITY_LABEL[p.freeCode] ?? p.freeCode) : "Free"}
+                </div>
+              )}
+        </div>
+      ))}
+    </td>
+  );
+}
+
 function LessonCell({
   slot, labels, mode, entityType, data, activeEntity,
   onCellClick,
@@ -158,7 +205,7 @@ function LessonCell({
 
 export default function TimetableGrid({
   slotMap, data, activeEntity, mode, entityType,
-  onCellClick,
+  overlaySources, onCellClick,
 }) {
   return (
     <div className="grid-wrap">
@@ -182,6 +229,17 @@ export default function TimetableGrid({
           {TIMETABLE_GRID.map((row, idx) => {
             const cell = (period) => {
               const slot = row[period - 1];
+              if (overlaySources) {
+                return (
+                  <OverlayCell
+                    key={period}
+                    slot={slot}
+                    sources={overlaySources}
+                    data={data}
+                    onCellClick={onCellClick}
+                  />
+                );
+              }
               return (
                 <LessonCell
                   key={period}

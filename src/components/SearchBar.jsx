@@ -5,30 +5,42 @@ import { ACTIVITY_LABEL } from "../utils/activityLabels";
 
 const ACTIVITY_CODES = ["LIB", "STUDY", "BAT", "MEETING"];
 
-function buildList(data, type) {
-  if (type === "teacher") {
-    return Object.entries(data.teachers)
-      .map(([id, t]) => ({ id, label: t.display_name ?? t.surname ?? id, kind: "teacher" }))
-      .sort((a, b) => a.label.localeCompare(b.label));
-  }
-  if (type === "student") {
-    return Object.entries(data.students)
-      .map(([id, s]) => ({ id, label: s.name ? `${s.name} (${id})` : id, kind: "student" }))
-      .sort((a, b) => a.label.localeCompare(b.label));
-  }
+function teacherList(data) {
+  return Object.entries(data.teachers)
+    .map(([id, t]) => ({ id, label: t.display_name ?? t.surname ?? id, kind: "teacher" }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+function studentList(data) {
+  return Object.entries(data.students)
+    .map(([id, s]) => ({ id, label: s.name ? `${s.name} (${id})` : id, kind: "student" }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+function subjectList(data) {
   const codes = new Set(Object.values(data.lessons).map(s => s.name));
-  const subjects = [...codes]
+  return [...codes]
     .map(code => ({ id: code, label: `${subjectDisplay(code)} (${code})`, kind: "subject" }))
     .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+function buildList(data, type) {
+  if (type === "teacher") return teacherList(data);
+  if (type === "student") return studentList(data);
+  // "compare" = teacher + student + subject (no activities)
+  if (type === "compare") {
+    return [...teacherList(data), ...studentList(data), ...subjectList(data)];
+  }
+  // subject box: activities prepended before subjects
   const activities = ACTIVITY_CODES.map(code => ({
     id: code,
     label: code === "STUDY" ? "Study / Free" : ACTIVITY_LABEL[code],
     kind: "activity",
   }));
-  return [...activities, ...subjects];
+  return [...activities, ...subjectList(data)];
 }
 
-function EntitySearch({ type, placeholder, data, onSelect }) {
+export function EntitySearch({ type, placeholder, data, onSelect }) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
 
@@ -58,7 +70,7 @@ function EntitySearch({ type, placeholder, data, onSelect }) {
         <div className="search-results">
           {filtered.map(item => (
             <div
-              key={item.id}
+              key={`${item.kind}:${item.id}`}
               className="search-result-item"
               onMouseDown={() => handleSelect(item)}
             >

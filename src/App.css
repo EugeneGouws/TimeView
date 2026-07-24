@@ -141,30 +141,88 @@
 .entity-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 8px;
   padding: 6px 12px;
   border-bottom: 1px solid var(--border);
   background: var(--accent-bg);
   flex-shrink: 0;
 }
 
-.entity-bar-label {
+/* Per-source comparison palette */
+.grid-line--c0 { --entity-color: #2563EB; } /* blue */
+.grid-line--c1 { --entity-color: #D97706; } /* orange */
+.grid-line--c2 { --entity-color: #7C3AED; } /* purple */
+.grid-line--c3 { --entity-color: #0D9488; } /* teal */
+
+.entity-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
   font-weight: 600;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 2px 6px 2px 8px;
 }
 
-.entity-close-btn {
-  font-size: 18px;
+.entity-chip-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.entity-chip-swatch--c0 { background: #2563EB; }
+.entity-chip-swatch--c1 { background: #D97706; }
+.entity-chip-swatch--c2 { background: #7C3AED; }
+.entity-chip-swatch--c3 { background: #0D9488; }
+
+.entity-chip-close {
+  font-size: 16px;
   line-height: 1;
   background: none;
   border: none;
   cursor: pointer;
   color: var(--text);
-  padding: 0 4px;
+  padding: 0 2px;
 
   &:hover {
     color: var(--accent);
   }
+}
+
+.entity-compare-add {
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  padding: 3px 10px;
+  color: var(--text);
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+}
+
+.entity-compare-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.entity-compare-cancel {
+  font-size: 16px;
+  line-height: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text);
+  padding: 0 2px;
 }
 
 /* ── Timetable header ──────────────────────────────────────── */
@@ -256,7 +314,7 @@
   font-family: Arial, sans-serif;
   font-size: 7pt;
   width: auto;
-  margin: 4px 6px 6px;
+  margin: 0 6px 6px;
   flex-shrink: 0;
 }
 
@@ -290,7 +348,9 @@
 .grid-wrap {
   flex: 1;
   overflow: auto;
-  padding: 8px;
+  padding: 8px 8px 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .timetable-grid {
@@ -299,6 +359,7 @@
   width: 100%;
   min-width: 820px;
   table-layout: fixed;
+  flex: 1;
 }
 
 .timetable-grid th,
@@ -440,6 +501,46 @@
 .grid-overflow {
   font-style: italic;
   color: var(--text);
+  font-size: 10px;
+}
+
+/* ── Comparison overlay cells ──────────────────────────────── */
+
+.grid-cell--overlay {
+  background: var(--bg);
+  text-align: left;
+  vertical-align: top;
+  cursor: default;
+  padding: 3px 5px;
+}
+
+.grid-cell--overlay.grid-cell--clickable {
+  cursor: pointer;
+}
+
+.grid-cell--shared-free {
+  background: #DCF3E0;
+}
+
+.grid-overlay-group {
+  border-left: 3px solid var(--entity-color);
+  padding-left: 5px;
+  color: var(--entity-color);
+}
+
+.grid-overlay-group + .grid-overlay-group {
+  margin-top: 5px;
+}
+
+.grid-overlay-group .grid-subject-line {
+  border-top: none;
+  margin-top: 1px;
+  padding-top: 0;
+}
+
+.grid-overlay-free {
+  font-style: italic;
+  opacity: 0.75;
   font-size: 10px;
 }
 

@@ -92,3 +92,14 @@ export function getSubjectSlotMap(data, subjectCode) {
   }
   return map;
 }
+
+// Dispatch on entity type → the matching slot-map builder. Shared by the primary
+// entity view and each comparison-overlay source.
+export function slotMapFor(data, entity) {
+  if (!data || !entity) return {};
+  const { type, id } = entity;
+  if (type === "teacher") return getTeacherSlotMap(data, id);
+  if (type === "student") return getStudentSlotMap(data, id);
+  if (type === "activity") return getActivitySlotMap(data, id);
+  return getSubjectSlotMap(data, id);
+}
