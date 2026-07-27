@@ -1,6 +1,3 @@
-export const BLOCKS = ["A", "B", "C", "D", "E", "F", "G", "H"];
-export const PERIODS = [1, 2, 3, 4, 5, 6, 7];
-
 // Rotation: rows = Day 1..8, columns = Period 1..7. Cells = subblock label.
 // Mirrors E:\TimePyBling\ui\constants.py TIMETABLE_GRID.
 export const TIMETABLE_GRID = [
@@ -13,6 +10,15 @@ export const TIMETABLE_GRID = [
   ["G1", "E2", "D3", "C4", "B5", "A6", "H7"],
   ["H1", "F2", "E3", "D4", "C5", "B6", "A7"],
 ];
+
+// Slot label -> its place in the rotation, 1-indexed. Null if not in the grid.
+export function slotPosition(slot) {
+  for (let day = 0; day < TIMETABLE_GRID.length; day++) {
+    const period = TIMETABLE_GRID[day].indexOf(slot);
+    if (period !== -1) return { day: day + 1, period: period + 1 };
+  }
+  return null;
+}
 
 function sortLabels(labels, subjects) {
   return [...labels].sort((a, b) => {
@@ -37,7 +43,7 @@ export function buildSlotMap(data) {
 }
 
 // { timeslot: [label, ...] } — one teacher
-export function getTeacherSlotMap(data, teacherId) {
+function getTeacherSlotMap(data, teacherId) {
   const map = {};
   for (const [label, subj] of Object.entries(data.lessons)) {
     if (subj.teacher !== teacherId) continue;
@@ -49,7 +55,7 @@ export function getTeacherSlotMap(data, teacherId) {
 }
 
 // { timeslot: [label] } — one student
-export function getStudentSlotMap(data, studentId) {
+function getStudentSlotMap(data, studentId) {
   const slots = data.student_slots?.[studentId] ?? {};
   const map = {};
   for (const [slot, label] of Object.entries(slots)) {
@@ -61,7 +67,7 @@ export function getStudentSlotMap(data, studentId) {
 // { timeslot: [entityId, ...] } — all students/teachers assigned a given
 // free-activity code in that slot. Entity IDs are prefixed `s:` or `t:` so
 // downstream callers can distinguish.
-export function getActivitySlotMap(data, code) {
+function getActivitySlotMap(data, code) {
   const map = {};
   function add(slot, key) {
     (map[slot] ??= []).push(key);
@@ -82,7 +88,7 @@ export function getActivitySlotMap(data, code) {
 }
 
 // { timeslot: [label, ...] } — all instances of a subject code
-export function getSubjectSlotMap(data, subjectCode) {
+function getSubjectSlotMap(data, subjectCode) {
   const map = {};
   for (const [label, subj] of Object.entries(data.lessons)) {
     if (subj.name !== subjectCode) continue;

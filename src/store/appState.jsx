@@ -20,6 +20,12 @@ function reducer(state, action) {
       return { ...state, activeEntity: action.payload, compareEntities: [] };
     case "CLEAR_ACTIVE_ENTITY":
       return { ...state, activeEntity: null, compareEntities: [] };
+    // Closing the primary chip promotes the next comparison entity instead of
+    // tearing down the whole comparison.
+    case "CLOSE_ACTIVE_ENTITY": {
+      const [next, ...rest] = state.compareEntities;
+      return { ...state, activeEntity: next ?? null, compareEntities: next ? rest : [] };
+    }
     case "ADD_COMPARE_ENTITY": {
       const e = action.payload;
       if (!state.activeEntity || state.compareEntities.length >= MAX_COMPARE) return state;

@@ -1,5 +1,5 @@
 // Display names for subject codes. Edit freely.
-export const SUBJECT_NAMES = {
+const SUBJECT_NAMES = {
   AC: "Accounting",
   AF: "Afrikaans",
   BS: "Business Studies",

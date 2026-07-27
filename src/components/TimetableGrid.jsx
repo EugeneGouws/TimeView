@@ -1,6 +1,6 @@
 import { TIMETABLE_GRID } from "../utils/timetableLayout";
 import { subjectDisplay } from "../utils/subjectNames";
-import { ACTIVITY_LABEL } from "../utils/activityLabels";
+import { ACTIVITY_LABEL, isSoftFree } from "../utils/activityLabels";
 
 function freeSlotCode(data, entityType, entityId, slot) {
   const bucket = entityType === "student"
@@ -60,13 +60,17 @@ function OverlayCell({ slot, sources, data, onCellClick }) {
   const anyBusy = perSource.some(p => p.busy);
   const personalCount = perSource.filter(p => p.isPersonal).length;
   const sharedFree = !anyBusy && personalCount >= 2;
+  const softFree = sharedFree && perSource.some(p => p.isPersonal && isSoftFree(p.freeCode));
 
   function handleClick(e) {
     const { cellRect, gridRect } = captureRects(e);
     onCellClick(slot, cellRect, gridRect);
   }
 
-  const cls = `grid-cell grid-cell--overlay${sharedFree ? " grid-cell--shared-free" : ""}${anyBusy ? " grid-cell--clickable" : ""}`;
+  const freeCls = sharedFree
+    ? (softFree ? " grid-cell--shared-free--soft" : " grid-cell--shared-free")
+    : "";
+  const cls = `grid-cell grid-cell--overlay${freeCls}${anyBusy ? " grid-cell--clickable" : ""}`;
   return (
     <td className={cls} onClick={anyBusy ? handleClick : undefined}>
       {perSource.map((p, si) => (
@@ -88,7 +92,7 @@ function OverlayCell({ slot, sources, data, onCellClick }) {
 
 function LessonCell({
   slot, labels, mode, entityType, data, activeEntity,
-  onCellClick,
+  onCellClick, noted, selected,
 }) {
   const hasClasses = labels.length > 0;
 
@@ -103,11 +107,16 @@ function LessonCell({
     onCellClick(slot, cellRect, gridRect);
   }
 
+  // Every cell is clickable — frees and empties select without opening a detail
+  // pane, so they can be noted like any other cell.
+  const stateCls =
+    (noted ? " grid-cell--noted" : "") + (selected ? " grid-cell--selected" : "");
+
   if (mode === "school") {
     return (
       <td
-        className={`grid-cell grid-cell--school${hasClasses ? " grid-cell--occupied" : " grid-cell--empty"}`}
-        onClick={hasClasses ? handleOccupiedClick : undefined}
+        className={`grid-cell grid-cell--school${hasClasses ? " grid-cell--occupied" : " grid-cell--empty"}${stateCls}`}
+        onClick={handleOccupiedClick}
       >
         {slot}
       </td>
@@ -117,12 +126,15 @@ function LessonCell({
   if (!hasClasses) {
     if (freeCode) {
       return (
-        <td className="grid-cell grid-cell--free">
+        <td
+          className={`grid-cell grid-cell--free${isSoftFree(freeCode) ? " grid-cell--free--soft" : ""}${stateCls}`}
+          onClick={handleOccupiedClick}
+        >
           <div className="grid-free-line">{ACTIVITY_LABEL[freeCode] ?? freeCode}</div>
         </td>
       );
     }
-    return <td className="grid-cell grid-cell--empty" />;
+    return <td className={`grid-cell grid-cell--empty${stateCls}`} onClick={handleOccupiedClick} />;
   }
 
   if (entityType === "activity") {
@@ -139,7 +151,7 @@ function LessonCell({
       const total = teacherNames.length;
       if (total === 0) {
         return (
-          <td className="grid-cell grid-cell--active" onClick={handleOccupiedClick}>
+          <td className={`grid-cell grid-cell--active${stateCls}`} onClick={handleOccupiedClick}>
             <div className="grid-subject-line">{slot} ({labels.length})</div>
           </td>
         );
@@ -147,7 +159,7 @@ function LessonCell({
       const shown = total > 3 ? teacherNames.slice(0, 2) : teacherNames;
       const overflow = total > 3 ? total - 2 : 0;
       return (
-        <td className="grid-cell grid-cell--active" onClick={handleOccupiedClick}>
+        <td className={`grid-cell grid-cell--active${stateCls}`} onClick={handleOccupiedClick}>
           {shown.map((name, i) => <div key={i} className="grid-subject-line">{name}</div>)}
           {overflow > 0 && <div className="grid-subject-line grid-overflow">({overflow} more)</div>}
         </td>
@@ -170,7 +182,7 @@ function LessonCell({
       const all = [...tEntries, ...sEntries];
       const total = all.length;
       return (
-        <td className="grid-cell grid-cell--active" onClick={handleOccupiedClick}>
+        <td className={`grid-cell grid-cell--active${stateCls}`} onClick={handleOccupiedClick}>
           {total > 3
             ? <div className="grid-subject-line">{slot} ({total})</div>
             : all.map((item, i) => (
@@ -184,7 +196,7 @@ function LessonCell({
     }
 
     return (
-      <td className="grid-cell grid-cell--active" onClick={handleOccupiedClick}>
+      <td className={`grid-cell grid-cell--active${stateCls}`} onClick={handleOccupiedClick}>
         <div className="grid-subject-line">{slot} ({labels.length})</div>
       </td>
     );
@@ -193,7 +205,7 @@ function LessonCell({
   const lines = formatLines(data, labels, entityType);
   return (
     <td
-      className="grid-cell grid-cell--active"
+      className={`grid-cell grid-cell--active${stateCls}`}
       onClick={handleOccupiedClick}
     >
       {lines.map((line, i) => (
@@ -205,7 +217,7 @@ function LessonCell({
 
 export default function TimetableGrid({
   slotMap, data, activeEntity, mode, entityType,
-  overlaySources, onCellClick,
+  overlaySources, onCellClick, notedSlots, selectedSlot,
 }) {
   return (
     <div className="grid-wrap">
@@ -250,6 +262,8 @@ export default function TimetableGrid({
                   data={data}
                   activeEntity={activeEntity}
                   onCellClick={onCellClick}
+                  noted={notedSlots?.has(slot)}
+                  selected={selectedSlot === slot}
                 />
               );
             };

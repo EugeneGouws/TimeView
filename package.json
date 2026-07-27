@@ -10,10 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "manim": "^0.0.1",
     "react": "^19.2.5",
-    "react-dom": "^19.2.5",
-    "xlsx": "^0.18.5"
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

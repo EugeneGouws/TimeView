@@ -39,7 +39,6 @@ __pycache__/
 # Markdown — internal docs only
 *.md
 !README.md
-!CLAUDE.md
 
 # Auto-memory (Cowork internal)
 .auto-memory/

@@ -95,14 +95,6 @@
   max-width: 260px;
 }
 
-.entity-type-select {
-  font-size: 13px;
-  padding: 4px 8px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-}
-
 .entity-search {
   width: 100%;
   font-size: 13px;
@@ -270,14 +262,6 @@
   padding: 4px 8px;
   gap: 2px 8px;
   align-content: center;
-}
-
-.tt-header-meta-key {
-  font-weight: 600;
-}
-
-.tt-header-meta-val {
-  text-align: left;
 }
 
 .tt-header-name {
@@ -475,6 +459,12 @@
   font-size: 11px;
 }
 
+/* Duty period in single-entity view — marked, but not the full free highlight. */
+.grid-cell--free--soft {
+  background: #EDF9EF;
+  box-shadow: inset 3px 0 0 rgba(45, 130, 70, 0.25);
+}
+
 .grid-free-line {
   font-style: italic;
   font-size: 11px;
@@ -520,6 +510,13 @@
 
 .grid-cell--shared-free {
   background: #DCF3E0;
+}
+
+/* Nominally free but on duty (LIB / BAT / MEETING). Dashed edge keeps the two
+   tiers distinguishable in greyscale print. */
+.grid-cell--shared-free--soft {
+  background: #EDF9EF;
+  box-shadow: inset 3px 0 0 rgba(45, 130, 70, 0.25);
 }
 
 .grid-overlay-group {
@@ -614,6 +611,26 @@
   }
 }
 
+.popout-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.popout-note-btn {
+  font-size: 13px;
+  line-height: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 4px;
+
+  &:hover {
+    filter: brightness(1.3);
+  }
+}
+
 .popout-body {
   overflow-y: auto;
   flex: 1;
@@ -625,10 +642,6 @@
   color: var(--text);
   padding: 8px 14px;
   margin: 0;
-}
-
-.popout-class {
-  border-bottom: 1px solid var(--border);
 }
 
 .popout-class-header {
@@ -721,6 +734,36 @@
   }
 }
 
+.topbar-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #2a2a2a;
+  background: #2a2a2a;
+  color: #fff;
+  cursor: pointer;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+
+  &:hover:not(:disabled) {
+    background: #444;
+    border-color: #444;
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+}
+
+.topbar-btn--on {
+  background: #C2410C;
+  border-color: #C2410C;
+}
+
 .upload-error {
   display: block;
   margin-top: 6px;
@@ -768,5 +811,237 @@
     &:hover {
       background: var(--accent-bg);
     }
+  }
+}
+
+/* ── Cell notes ────────────────────────────────────────────── */
+
+.grid-cell--noted {
+  position: relative;
+}
+
+.grid-cell--noted::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #C2410C;
+}
+
+/* Last-clicked cell — drawn inside the cell so it survives any background. */
+.grid-cell--selected {
+  outline: 2px solid #2a2a2a;
+  outline-offset: -2px;
+}
+
+.note-popout {
+  min-width: 560px;
+  max-width: 680px;
+  padding-bottom: 12px;
+}
+
+.note-columns {
+  display: flex;
+  gap: 12px;
+  margin: 12px 14px 0;
+  align-items: stretch;
+}
+
+.note-details {
+  flex: 0 0 230px;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  background: var(--accent-bg);
+  padding: 8px;
+}
+
+.note-details-heading {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+  color: var(--text-h);
+}
+
+.note-details-item {
+  font-size: 12px;
+  line-height: 1.35;
+  padding: 3px 0;
+}
+
+.note-details-item + .note-details-item {
+  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+}
+
+.note-details-primary {
+  display: block;
+  color: var(--text-h);
+}
+
+.note-details-secondary,
+.note-details-count {
+  font-size: 11px;
+  color: var(--text);
+  margin-right: 5px;
+}
+
+.note-details-students {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+
+  li {
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--text);
+    padding-left: 8px;
+  }
+}
+
+.note-textarea {
+  flex: 1;
+  min-height: 300px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  padding: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  resize: vertical;
+}
+
+.note-caution {
+  margin: 8px 14px 0;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--text);
+}
+
+.note-actions {
+  display: flex;
+  gap: 8px;
+  margin: 12px 14px 0;
+}
+
+.note-btn {
+  padding: 5px 14px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--accent-bg);
+  }
+}
+
+.note-btn--primary {
+  background: #2a2a2a;
+  border-color: #2a2a2a;
+  color: #fff;
+
+  &:hover {
+    background: #444;
+  }
+}
+
+.note-btn--danger {
+  margin-left: auto;
+  border-color: transparent;
+  color: #c00;
+  font-size: 11px;
+}
+
+/* Note mode: every cell is a target. */
+.note-mode .grid-cell {
+  cursor: pointer;
+}
+
+/* ── Print ─────────────────────────────────────────────────── */
+
+@page {
+  size: A4 landscape;
+  margin: 10mm;
+}
+
+@media print {
+  /* Force the light palette — dark mode must not print. */
+  :root,
+  body,
+  #root,
+  #app {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Release the fixed-width / overflow locks so the whole grid renders. */
+  #root {
+    width: auto;
+    max-width: none;
+    min-height: 0;
+    border-inline: none;
+  }
+
+  #app {
+    min-width: 0;
+    min-height: 0;
+  }
+
+  #timetable-area,
+  .grid-wrap {
+    overflow: visible;
+  }
+
+  .topbar,
+  .search-bar,
+  .entity-bar,
+  .popout-overlay,
+  .subblock-popout,
+  .note-popout,
+  .upload-modal-overlay,
+  .upload-error {
+    display: none !important;
+  }
+
+  .timetable-grid,
+  .times-grid {
+    width: 100%;
+    min-width: 0;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Compress rows so eight days plus the times grid fit one landscape page. */
+  .grid-cell {
+    min-height: 0;
+    padding: 2px 4px;
+  }
+
+  .grid-subject-line,
+  .grid-free-line {
+    font-size: 9px;
+    line-height: 1.25;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+
+  /* Times grid only prints for a plain teacher/student timetable. */
+  #app.print-no-times .times-grid-wrap,
+  #app.print-no-times .times-grid {
+    display: none !important;
+  }
+
+  /* Note markers are screen affordances, not part of the printed timetable. */
+  .grid-cell--noted::after {
+    display: none;
   }
 }

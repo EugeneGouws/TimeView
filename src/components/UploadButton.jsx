@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import { useAppState } from "../store/appState";
 import { validate, versionMismatch } from "../utils/schema";
-import { convertXlsxToTimetable } from "../utils/xlsxToTimetable";
 import { setHandle } from "../utils/fileHandleStore";
 
 const HAS_FS_ACCESS = typeof window !== "undefined" && "showOpenFilePicker" in window;
@@ -23,14 +22,15 @@ export default function UploadButton() {
       [handle] = await window.showOpenFilePicker({
         types: [
           {
-            description: "Timetable",
+            description: "JSON file (*.json)",
             accept: {
               "application/json": [".json"],
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
-              "application/vnd.ms-excel": [".xls"],
+              "text/json": [".json"],
+              "text/plain": [".json"],
             },
           },
         ],
+        excludeAcceptAllOption: false,
       });
     } catch (err) {
       if (err.name !== "AbortError") setError(`File picker failed: ${err.message}`);
@@ -38,16 +38,7 @@ export default function UploadButton() {
     }
     try {
       const file = await handle.getFile();
-      const lower = file.name.toLowerCase();
-      const isXlsx = lower.endsWith(".xlsx") || lower.endsWith(".xls");
-      let parsed;
-      if (isXlsx) {
-        const buf = await file.arrayBuffer();
-        parsed = convertXlsxToTimetable(buf, file.name);
-      } else {
-        const text = await file.text();
-        parsed = JSON.parse(text);
-      }
+      const parsed = JSON.parse(await file.text());
       handleParsed(parsed, handle);
     } catch (err) {
       setError(`Couldn't read file: ${err.message}`);
@@ -75,20 +66,8 @@ export default function UploadButton() {
     if (!file) return;
     e.target.value = "";
 
-    const lower = file.name.toLowerCase();
-    const isXlsx = lower.endsWith(".xlsx") || lower.endsWith(".xls");
-
     const reader = new FileReader();
     reader.onload = (evt) => {
-      if (isXlsx) {
-        try {
-          const parsed = convertXlsxToTimetable(evt.target.result, file.name);
-          handleParsed(parsed);
-        } catch (err) {
-          setError(`xlsx conversion failed: ${err.message}`);
-        }
-        return;
-      }
       let parsed;
       try {
         parsed = JSON.parse(evt.target.result);
@@ -98,8 +77,7 @@ export default function UploadButton() {
       }
       handleParsed(parsed);
     };
-    if (isXlsx) reader.readAsArrayBuffer(file);
-    else reader.readAsText(file);
+    reader.readAsText(file);
   }
 
   function handleConfirm() {
@@ -123,7 +101,7 @@ export default function UploadButton() {
       <input
         ref={inputRef}
         type="file"
-        accept=".json,.xlsx,.xls"
+        accept=".json"
         style={{ display: "none" }}
         onChange={handleFileChange}
       />

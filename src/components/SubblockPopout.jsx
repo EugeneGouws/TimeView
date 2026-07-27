@@ -1,15 +1,18 @@
 import { useState } from "react";
 import { subjectDisplay } from "../utils/subjectNames";
+import { rosterAtSlot } from "../utils/cellDetails";
 
-function rosterAtSlot(data, label, slot) {
-  const ss = data.student_slots ?? {};
-  const out = [];
-  for (const [sid, slots] of Object.entries(ss)) {
-    if (slots[slot] === label) {
-      out.push({ sid, name: data.students[sid]?.name ?? sid });
-    }
-  }
-  return out.sort((a, b) => a.name.localeCompare(b.name));
+function HeaderActions({ onOpenNote, onClose }) {
+  return (
+    <span className="popout-header-actions">
+      {onOpenNote && (
+        <button className="popout-note-btn" onClick={onOpenNote} title="Note for this block">
+          ✏️
+        </button>
+      )}
+      <button className="popout-close" onClick={onClose}>×</button>
+    </span>
+  );
 }
 
 const PANEL_W = 240;       // reserved horizontal space for placement
@@ -43,7 +46,7 @@ function placeVertical(anchorTop) {
   return { top: Math.max(MARGIN, anchorTop - h), maxHeight: spaceAbove };
 }
 
-export default function SubblockPopout({ slot, cellRect, gridRect, data, slotMap, mode, activeEntity, onStudentSelect, onClose }) {
+export default function SubblockPopout({ slot, cellRect, gridRect, data, slotMap, mode, activeEntity, onStudentSelect, onOpenNote, onClose }) {
   const [selected, setSelected] = useState(null); // { label, itemRect }
   const labels = slotMap[slot] ?? [];
 
@@ -85,7 +88,7 @@ export default function SubblockPopout({ slot, cellRect, gridRect, data, slotMap
         >
           <div className="popout-header">
             <span className="popout-title">{slot} ({total})</span>
-            <button className="popout-close" onClick={onClose}>×</button>
+            <HeaderActions onOpenNote={onOpenNote} onClose={onClose} />
           </div>
           <div className="popout-body">
             {total === 0 && <p className="popout-empty">No entries in this block.</p>}
@@ -167,7 +170,7 @@ export default function SubblockPopout({ slot, cellRect, gridRect, data, slotMap
             <span className="popout-title">
               {subjectDisplay(subj.name)} Gr{subj.grade} ({students.length})
             </span>
-            <button className="popout-close" onClick={onClose}>×</button>
+            <HeaderActions onOpenNote={onOpenNote} onClose={onClose} />
           </div>
           <div className="popout-body">
             {students.map(({ sid, name }) => (
@@ -263,7 +266,7 @@ export default function SubblockPopout({ slot, cellRect, gridRect, data, slotMap
       >
         <div className="popout-header">
           <span className="popout-title">Block {slot}</span>
-          <button className="popout-close" onClick={onClose}>×</button>
+          <HeaderActions onOpenNote={onOpenNote} onClose={onClose} />
         </div>
         <div className="popout-body">
           {labels.length === 0 && (

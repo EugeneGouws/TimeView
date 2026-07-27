@@ -6,6 +6,9 @@ import TimetableHeader from "./components/TimetableHeader";
 import TimesGrid from "./components/TimesGrid";
 import SubblockPopout from "./components/SubblockPopout";
 import SearchBar, { EntitySearch } from "./components/SearchBar";
+import NotePopout from "./components/NotePopout";
+import { cellKey, getAllNotes, setNote, clearAllNotes } from "./utils/notesStore";
+import { cellDetails } from "./utils/cellDetails";
 import { buildSlotMap, slotMapFor } from "./utils/timetableLayout";
 import { validate } from "./utils/schema";
 import { getHandle, clearHandle } from "./utils/fileHandleStore";
@@ -38,6 +41,10 @@ function AppShell() {
   const [needsReconnect, setNeedsReconnect] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [addingCompare, setAddingCompare] = useState(false);
+  const [notes, setNotes] = useState(() => getAllNotes());
+  const [noteMode, setNoteMode] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [noteSlot, setNoteSlot] = useState(null); // slot whose note editor is open
   const handleRef = useRef(null);
 
   async function readHandle(handle) {
@@ -110,6 +117,11 @@ function AppShell() {
   const currentSlotMap = activeEntity ? entitySlotMap : schoolSlotMap;
   const canCompare = activeEntity && activeEntity.type !== "activity";
 
+  // Lesson times are only meaningful on a plain personal timetable.
+  const showTimesOnPrint =
+    !overlayMode &&
+    (activeEntity?.type === "teacher" || activeEntity?.type === "student");
+
   function handleStudentSelect(studentId) {
     dispatch({
       type: "SET_ACTIVE_ENTITY",
@@ -117,12 +129,67 @@ function AppShell() {
     });
   }
 
+  // Notes attach to the primary entity, so they need exactly one selected.
+  const notesEnabled = Boolean(activeEntity) && !overlayMode;
+
+  const notedSlots = useMemo(() => {
+    if (!activeEntity) return new Set();
+    const prefix = `${activeEntity.type}:${activeEntity.id}|`;
+    return new Set(
+      Object.keys(notes).filter(k => k.startsWith(prefix)).map(k => k.slice(prefix.length))
+    );
+  }, [notes, activeEntity]);
+
+  // Reset note UI when the entity changes (adjust-state-during-render pattern).
+  const entityKey = activeEntity ? `${activeEntity.type}:${activeEntity.id}` : "";
+  const [prevEntityKey, setPrevEntityKey] = useState(entityKey);
+  if (prevEntityKey !== entityKey) {
+    setPrevEntityKey(entityKey);
+    setNoteMode(false);
+    setSelectedSlot(null);
+    setNoteSlot(null);
+  }
+
+  // Single editor path; the pen and a cell click are just two ways in.
+  function openNoteEditor(slot) {
+    setPopout(null);
+    setNoteMode(false);
+    setNoteSlot(slot);
+  }
+
+  function handleToggleNote() {
+    if (noteMode) setNoteMode(false);
+    else if (selectedSlot) openNoteEditor(selectedSlot);
+    else setNoteMode(true);
+  }
+
+  function handleSaveNote(text) {
+    setNotes(setNote(cellKey(activeEntity, noteSlot), text));
+    setNoteSlot(null);
+  }
+
+  function handleClearAllNotes() {
+    setNotes(clearAllNotes());
+    setNoteSlot(null);
+  }
+
   function handleCellClick(slot, cellRect, gridRect) {
+    setSelectedSlot(slot);
+    if (noteMode && notesEnabled) {
+      openNoteEditor(slot);
+      return;
+    }
+    // Frees and empties have nothing to show — selecting is enough, and it lets
+    // the pen reach them.
+    if ((currentSlotMap[slot] ?? []).length === 0) {
+      setPopout(null);
+      return;
+    }
     setPopout({ slot, cellRect, gridRect });
   }
 
   function handleClose() {
-    dispatch({ type: "CLEAR_ACTIVE_ENTITY" });
+    dispatch({ type: "CLOSE_ACTIVE_ENTITY" });
     setAddingCompare(false);
   }
 
@@ -136,8 +203,19 @@ function AppShell() {
   }
 
   return (
-    <div id="app">
-      <TopBar />
+    <div
+      id="app"
+      className={[
+        showTimesOnPrint ? "" : "print-no-times",
+        noteMode && notesEnabled ? "note-mode" : "",
+      ].filter(Boolean).join(" ")}
+    >
+      <TopBar
+        canPrint={!!data}
+        noteMode={noteMode}
+        noteDisabled={!notesEnabled}
+        onToggleNote={handleToggleNote}
+      />
       <div id="timetable-area">
         {data && <SearchBar />}
         {data && activeEntity && (
@@ -153,7 +231,7 @@ function AppShell() {
                 <button
                   className="entity-chip-close"
                   onClick={() => (i === 0 ? handleClose() : handleRemoveCompare(src.entity))}
-                  title={i === 0 ? "Clear" : "Remove from comparison"}
+                  title={i === 0 && compareEntities.length === 0 ? "Clear" : "Remove"}
                 >
                   ×
                 </button>
@@ -189,6 +267,9 @@ function AppShell() {
               entityType={activeEntity?.type}
               overlaySources={overlayMode ? overlaySources : null}
               onCellClick={handleCellClick}
+              noteMode={noteMode && notesEnabled}
+              notedSlots={notedSlots}
+              selectedSlot={selectedSlot}
             />
             <TimesGrid />
           </>
@@ -219,7 +300,19 @@ function AppShell() {
           mode={activeEntity ? "entity" : "school"}
           activeEntity={activeEntity}
           onStudentSelect={handleStudentSelect}
+          onOpenNote={notesEnabled ? () => openNoteEditor(popout.slot) : undefined}
           onClose={() => setPopout(null)}
+        />
+      )}
+      {noteSlot && activeEntity && (
+        <NotePopout
+          slot={noteSlot}
+          title={getEntityLabel(data, activeEntity)}
+          details={cellDetails(data, currentSlotMap, noteSlot, "entity", activeEntity)}
+          initialText={notes[cellKey(activeEntity, noteSlot)] ?? ""}
+          onSave={handleSaveNote}
+          onClearAll={handleClearAllNotes}
+          onClose={() => setNoteSlot(null)}
         />
       )}
     </div>

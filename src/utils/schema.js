@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = "3.0";
+const SCHEMA_VERSION = "3.0";
 
 const REQUIRED_KEYS = [
   "version",
