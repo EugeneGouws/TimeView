@@ -43,6 +43,7 @@ function AppShell() {
   const [addingCompare, setAddingCompare] = useState(false);
   const [notes, setNotes] = useState(() => getAllNotes());
   const [noteMode, setNoteMode] = useState(false);
+  const [expandAll, setExpandAll] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [noteSlot, setNoteSlot] = useState(null); // slot whose note editor is open
   const handleRef = useRef(null);
@@ -132,12 +133,26 @@ function AppShell() {
   // Notes attach to the primary entity, so they need exactly one selected.
   const notesEnabled = Boolean(activeEntity) && !overlayMode;
 
+  // Dot markers — every noted slot regardless of display mode (selection/marker use).
   const notedSlots = useMemo(() => {
     if (!activeEntity) return new Set();
     const prefix = `${activeEntity.type}:${activeEntity.id}|`;
     return new Set(
       Object.keys(notes).filter(k => k.startsWith(prefix)).map(k => k.slice(prefix.length))
     );
+  }, [notes, activeEntity]);
+
+  // Inline-mode notes render their text in the cell instead of just a dot.
+  const inlineNoteText = useMemo(() => {
+    const map = new Map();
+    if (!activeEntity) return map;
+    const prefix = `${activeEntity.type}:${activeEntity.id}|`;
+    for (const [k, v] of Object.entries(notes)) {
+      if (k.startsWith(prefix) && v?.displayMode === "inline" && v.text) {
+        map.set(k.slice(prefix.length), v.text);
+      }
+    }
+    return map;
   }, [notes, activeEntity]);
 
   // Reset note UI when the entity changes (adjust-state-during-render pattern).
@@ -163,8 +178,8 @@ function AppShell() {
     else setNoteMode(true);
   }
 
-  function handleSaveNote(text) {
-    setNotes(setNote(cellKey(activeEntity, noteSlot), text));
+  function handleSaveNote(text, displayMode) {
+    setNotes(setNote(cellKey(activeEntity, noteSlot), text, displayMode));
     setNoteSlot(null);
   }
 
@@ -215,6 +230,8 @@ function AppShell() {
         noteMode={noteMode}
         noteDisabled={!notesEnabled}
         onToggleNote={handleToggleNote}
+        expandAll={expandAll}
+        onToggleExpandAll={() => setExpandAll(v => !v)}
       />
       <div id="timetable-area">
         {data && <SearchBar />}
@@ -269,7 +286,9 @@ function AppShell() {
               onCellClick={handleCellClick}
               noteMode={noteMode && notesEnabled}
               notedSlots={notedSlots}
+              noteTextMap={inlineNoteText}
               selectedSlot={selectedSlot}
+              expandAll={expandAll}
             />
             <TimesGrid />
           </>
@@ -309,7 +328,8 @@ function AppShell() {
           slot={noteSlot}
           title={getEntityLabel(data, activeEntity)}
           details={cellDetails(data, currentSlotMap, noteSlot, "entity", activeEntity)}
-          initialText={notes[cellKey(activeEntity, noteSlot)] ?? ""}
+          initialText={notes[cellKey(activeEntity, noteSlot)]?.text ?? ""}
+          initialDisplayMode={notes[cellKey(activeEntity, noteSlot)]?.displayMode ?? "dot"}
           onSave={handleSaveNote}
           onClearAll={handleClearAllNotes}
           onClose={() => setNoteSlot(null)}

@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { slotPosition } from "../utils/timetableLayout";
 
-export default function NotePopout({ slot, title, details, initialText, onSave, onClearAll, onClose }) {
+export default function NotePopout({
+  slot, title, details, initialText, initialDisplayMode, onSave, onClearAll, onClose,
+}) {
   const [text, setText] = useState(initialText ?? "");
+  const [displayMode, setDisplayMode] = useState(initialDisplayMode ?? "dot");
   const hasExisting = Boolean(initialText);
   const items = details?.items ?? [];
   const pos = slotPosition(slot);
@@ -46,11 +49,27 @@ export default function NotePopout({ slot, title, details, initialText, onSave, 
           />
         </div>
 
+        <div className="note-display-toggle">
+          <span className="note-display-toggle-label">Show as:</span>
+          <button
+            className={`note-btn note-btn--toggle${displayMode === "dot" ? " note-btn--on" : ""}`}
+            onClick={() => setDisplayMode("dot")}
+          >
+            Dot
+          </button>
+          <button
+            className={`note-btn note-btn--toggle${displayMode === "inline" ? " note-btn--on" : ""}`}
+            onClick={() => setDisplayMode("inline")}
+          >
+            Full text in cell
+          </button>
+        </div>
+
         <div className="note-caution">Saved on this device only. Not synced, not backed up.</div>
         <div className="note-actions">
-          <button className="note-btn note-btn--primary" onClick={() => onSave(text)}>Save</button>
+          <button className="note-btn note-btn--primary" onClick={() => onSave(text, displayMode)}>Save</button>
           {hasExisting && (
-            <button className="note-btn" onClick={() => onSave("")}>Delete</button>
+            <button className="note-btn" onClick={() => onSave("", displayMode)}>Delete</button>
           )}
           <button className="note-btn" onClick={onClose}>Cancel</button>
           <button

@@ -1,6 +1,8 @@
 import UploadButton from "./UploadButton";
 
-export default function TopBar({ canPrint, noteMode, noteDisabled, onToggleNote }) {
+export default function TopBar({
+  canPrint, noteMode, noteDisabled, onToggleNote, expandAll, onToggleExpandAll,
+}) {
   return (
     <header className="topbar">
       <span className="topbar-title">TimeView</span>
@@ -11,6 +13,13 @@ export default function TopBar({ canPrint, noteMode, noteDisabled, onToggleNote 
             🖨
           </button>
         )}
+        <button
+          className={`topbar-btn${expandAll ? " topbar-btn--on" : ""}`}
+          onClick={onToggleExpandAll}
+          title={expandAll ? "Collapse cramped cells" : "Expand cramped cells (>3 entries)"}
+        >
+          ⤢
+        </button>
         <button
           className={`topbar-btn${noteMode ? " topbar-btn--on" : ""}`}
           onClick={onToggleNote}

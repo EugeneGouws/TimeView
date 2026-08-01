@@ -90,9 +90,43 @@ function OverlayCell({ slot, sources, data, onCellClick }) {
   );
 }
 
+// Cells with more entries than this get cramped by default; the header's
+// expand-all toggle (App.jsx `expandAll`) reveals the rest grid-wide.
+const OVERFLOW_LIMIT = 3;
+
+// Renders an item list with the first OVERFLOW_LIMIT always visible and the
+// rest in a group that's CSS-hidden unless `expandAll` is set (or printing —
+// see .grid-cell-overflow-group print rule in App.css). Full list always in
+// the DOM so print never depends on on-screen toggle state.
+function renderEntries(items, expandAll) {
+  const shown = items.slice(0, OVERFLOW_LIMIT);
+  const rest = items.slice(OVERFLOW_LIMIT);
+  return (
+    <>
+      {shown.map((item, i) => (
+        <div key={i} className={`grid-subject-line${item.bold ? " grid-subject-line--bold" : ""}`}>
+          {item.text}
+        </div>
+      ))}
+      {rest.length > 0 && (
+        <div className={`grid-cell-overflow-group${expandAll ? " grid-cell-overflow-group--expanded" : ""}`}>
+          {rest.map((item, i) => (
+            <div key={i} className={`grid-subject-line${item.bold ? " grid-subject-line--bold" : ""}`}>
+              {item.text}
+            </div>
+          ))}
+        </div>
+      )}
+      {rest.length > 0 && !expandAll && (
+        <div className="grid-subject-line grid-overflow">({rest.length} more)</div>
+      )}
+    </>
+  );
+}
+
 function LessonCell({
   slot, labels, mode, entityType, data, activeEntity,
-  onCellClick, noted, selected,
+  onCellClick, noted, selected, noteText, expandAll,
 }) {
   const hasClasses = labels.length > 0;
 
@@ -112,112 +146,68 @@ function LessonCell({
   const stateCls =
     (noted ? " grid-cell--noted" : "") + (selected ? " grid-cell--selected" : "");
 
+  let cellCls;
+  let body = null;
+
   if (mode === "school") {
-    return (
-      <td
-        className={`grid-cell grid-cell--school${hasClasses ? " grid-cell--occupied" : " grid-cell--empty"}${stateCls}`}
-        onClick={handleOccupiedClick}
-      >
-        {slot}
-      </td>
-    );
-  }
-
-  if (!hasClasses) {
+    cellCls = `grid-cell grid-cell--school${hasClasses ? " grid-cell--occupied" : " grid-cell--empty"}`;
+    body = slot;
+  } else if (!hasClasses) {
     if (freeCode) {
-      return (
-        <td
-          className={`grid-cell grid-cell--free${isSoftFree(freeCode) ? " grid-cell--free--soft" : ""}${stateCls}`}
-          onClick={handleOccupiedClick}
-        >
-          <div className="grid-free-line">{ACTIVITY_LABEL[freeCode] ?? freeCode}</div>
-        </td>
-      );
+      cellCls = `grid-cell grid-cell--free${isSoftFree(freeCode) ? " grid-cell--free--soft" : ""}`;
+      body = <div className="grid-free-line">{ACTIVITY_LABEL[freeCode] ?? freeCode}</div>;
+    } else {
+      cellCls = "grid-cell grid-cell--empty";
     }
-    return <td className={`grid-cell grid-cell--empty${stateCls}`} onClick={handleOccupiedClick} />;
-  }
-
-  if (entityType === "activity") {
+  } else if (entityType === "activity") {
+    cellCls = "grid-cell grid-cell--active";
     const activityId = activeEntity?.id;
     const TEACHER_NAME_CODES = ["LIB", "BAT", "MEETING"];
 
     if (TEACHER_NAME_CODES.includes(activityId)) {
-      const teacherNames = labels
+      const teacherItems = labels
         .filter(l => l.startsWith("t:"))
         .map(l => {
           const t = data.teachers[l.slice(2)];
-          return t ? (t.display_name ?? t.surname) : l;
+          return { text: t ? (t.display_name ?? t.surname) : l, bold: false };
         });
-      const total = teacherNames.length;
-      if (total === 0) {
-        return (
-          <td className={`grid-cell grid-cell--active${stateCls}`} onClick={handleOccupiedClick}>
-            <div className="grid-subject-line">{slot} ({labels.length})</div>
-          </td>
-        );
-      }
-      const shown = total > 3 ? teacherNames.slice(0, 2) : teacherNames;
-      const overflow = total > 3 ? total - 2 : 0;
-      return (
-        <td className={`grid-cell grid-cell--active${stateCls}`} onClick={handleOccupiedClick}>
-          {shown.map((name, i) => <div key={i} className="grid-subject-line">{name}</div>)}
-          {overflow > 0 && <div className="grid-subject-line grid-overflow">({overflow} more)</div>}
-        </td>
-      );
-    }
-
-    if (activityId === "STUDY") {
+      body = teacherItems.length === 0
+        ? <div className="grid-subject-line">{slot} ({labels.length})</div>
+        : renderEntries(teacherItems, expandAll);
+    } else {
+      // STUDY and every other activity (EXTRA/LAB/FREE/etc.) — mixed
+      // teacher+student entries, teachers bolded.
       const tEntries = labels
         .filter(l => l.startsWith("t:"))
         .map(l => {
           const t = data.teachers[l.slice(2)];
-          return { name: t ? (t.display_name ?? t.surname) : l, teacher: true };
+          return { text: t ? (t.display_name ?? t.surname) : l, bold: true };
         });
       const sEntries = labels
         .filter(l => l.startsWith("s:"))
         .map(l => {
           const s = data.students[l.slice(2)];
-          return { name: s?.name ?? l, teacher: false };
+          return { text: s?.name ?? l, bold: false };
         });
-      const all = [...tEntries, ...sEntries];
-      const total = all.length;
-      return (
-        <td className={`grid-cell grid-cell--active${stateCls}`} onClick={handleOccupiedClick}>
-          {total > 3
-            ? <div className="grid-subject-line">{slot} ({total})</div>
-            : all.map((item, i) => (
-                <div key={i} className={`grid-subject-line${item.teacher ? " grid-subject-line--bold" : ""}`}>
-                  {item.name}
-                </div>
-              ))
-          }
-        </td>
-      );
+      body = renderEntries([...tEntries, ...sEntries], expandAll);
     }
-
-    return (
-      <td className={`grid-cell grid-cell--active${stateCls}`} onClick={handleOccupiedClick}>
-        <div className="grid-subject-line">{slot} ({labels.length})</div>
-      </td>
-    );
+  } else {
+    cellCls = "grid-cell grid-cell--active";
+    const items = formatLines(data, labels, entityType).map(text => ({ text, bold: false }));
+    body = renderEntries(items, expandAll);
   }
 
-  const lines = formatLines(data, labels, entityType);
   return (
-    <td
-      className={`grid-cell grid-cell--active${stateCls}`}
-      onClick={handleOccupiedClick}
-    >
-      {lines.map((line, i) => (
-        <div key={i} className="grid-subject-line">{line}</div>
-      ))}
+    <td className={`${cellCls}${stateCls}`} onClick={handleOccupiedClick}>
+      {body}
+      {noteText && <div className="grid-note-inline">{noteText}</div>}
     </td>
   );
 }
 
 export default function TimetableGrid({
   slotMap, data, activeEntity, mode, entityType,
-  overlaySources, onCellClick, notedSlots, selectedSlot,
+  overlaySources, onCellClick, notedSlots, noteTextMap, selectedSlot, expandAll,
 }) {
   return (
     <div className="grid-wrap">
@@ -263,7 +253,9 @@ export default function TimetableGrid({
                   activeEntity={activeEntity}
                   onCellClick={onCellClick}
                   noted={notedSlots?.has(slot)}
+                  noteText={noteTextMap?.get(slot)}
                   selected={selectedSlot === slot}
+                  expandAll={expandAll}
                 />
               );
             };
