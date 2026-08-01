@@ -12,6 +12,7 @@ import { cellDetails } from "./utils/cellDetails";
 import { buildSlotMap, slotMapFor } from "./utils/timetableLayout";
 import { validate } from "./utils/schema";
 import { getHandle, clearHandle } from "./utils/fileHandleStore";
+import { getLastEntity, setLastEntity } from "./utils/lastEntityStore";
 import { ACTIVITY_LABEL } from "./utils/activityLabels";
 import "./App.css";
 
@@ -57,6 +58,11 @@ function AppShell() {
     dispatch({ type: "LOAD_TIMETABLE", payload: parsed });
     setNeedsReconnect(false);
     setLoadError(null);
+
+    const last = getLastEntity();
+    if (last && Object.keys(slotMapFor(parsed, last)).length > 0) {
+      dispatch({ type: "SET_ACTIVE_ENTITY", payload: last });
+    }
   }
 
   useEffect(() => {
@@ -95,6 +101,11 @@ function AppShell() {
       setLoadError("Couldn't load the saved timetable file. Please locate it again.");
     }
   }
+
+  useEffect(() => {
+    if (!data) return; // don't clobber the stored ref before the timetable has loaded
+    setLastEntity(activeEntity);
+  }, [data, activeEntity]);
 
   const schoolSlotMap = useMemo(() => (data ? buildSlotMap(data) : {}), [data]);
 
