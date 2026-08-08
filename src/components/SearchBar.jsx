@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useAppState } from "../store/appState";
 import { subjectDisplay } from "../utils/subjectNames";
 import { ACTIVITY_LABEL } from "../utils/activityLabels";
+import { gradeOptions } from "../utils/gradeFilter";
 
 const ACTIVITY_CODES = ["LIB", "STUDY", "BAT", "MEETING"];
 
@@ -27,6 +28,7 @@ function subjectList(data) {
 function buildList(data, type) {
   if (type === "teacher") return teacherList(data);
   if (type === "student") return studentList(data);
+  if (type === "grade") return gradeOptions(data);
   // "compare" = teacher + student + subject (no activities)
   if (type === "compare") {
     return [...teacherList(data), ...studentList(data), ...subjectList(data)];
@@ -89,6 +91,11 @@ export default function SearchBar() {
   if (!data) return null;
 
   function handleSelect(type, id) {
+    // "Everyone" is the absence of a filter, not an entity.
+    if (type === "all") {
+      dispatch({ type: "CLEAR_ACTIVE_ENTITY" });
+      return;
+    }
     dispatch({ type: "SET_ACTIVE_ENTITY", payload: { type, id } });
   }
 
@@ -97,6 +104,7 @@ export default function SearchBar() {
       <EntitySearch type="student" placeholder="Student" data={data} onSelect={handleSelect} />
       <EntitySearch type="teacher" placeholder="Teacher" data={data} onSelect={handleSelect} />
       <EntitySearch type="subject" placeholder="Subject / Activity" data={data} onSelect={handleSelect} />
+      <EntitySearch type="grade" placeholder="Grade / Class" data={data} onSelect={handleSelect} />
     </div>
   );
 }

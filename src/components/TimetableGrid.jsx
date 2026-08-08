@@ -90,15 +90,30 @@ function OverlayCell({ slot, sources, data, onCellClick }) {
   );
 }
 
-// Cells with more entries than this get cramped by default; the header's
-// expand-all toggle (App.jsx `expandAll`) reveals the rest grid-wide.
+// Cells with more entries than this get cramped by default; the cell-edge
+// +/− control (App.jsx `expandAll`) reveals the rest grid-wide.
 const OVERFLOW_LIMIT = 3;
 
-// Renders an item list with the first OVERFLOW_LIMIT always visible and the
-// rest in a group that's CSS-hidden unless `expandAll` is set (or printing —
-// see .grid-cell-overflow-group print rule in App.css). Full list always in
-// the DOM so print never depends on on-screen toggle state.
+function EntryLine({ item }) {
+  return (
+    <>
+      <div className={`grid-subject-line${item.bold ? " grid-subject-line--bold" : ""}`}>
+        {item.text}
+      </div>
+      {item.children?.map((name, i) => (
+        <div key={i} className="grid-nested-line">{name}</div>
+      ))}
+    </>
+  );
+}
+
+// Expanded: every entry plus its nested roster. Collapsed: first OVERFLOW_LIMIT
+// top-level lines, rest in a CSS-hidden group (kept in the DOM so the toggle is
+// pure CSS), nested rosters dropped entirely.
 function renderEntries(items, expandAll) {
+  if (expandAll) {
+    return items.map((item, i) => <EntryLine key={i} item={item} />);
+  }
   const shown = items.slice(0, OVERFLOW_LIMIT);
   const rest = items.slice(OVERFLOW_LIMIT);
   return (
@@ -109,7 +124,7 @@ function renderEntries(items, expandAll) {
         </div>
       ))}
       {rest.length > 0 && (
-        <div className={`grid-cell-overflow-group${expandAll ? " grid-cell-overflow-group--expanded" : ""}`}>
+        <div className="grid-cell-overflow-group">
           {rest.map((item, i) => (
             <div key={i} className={`grid-subject-line${item.bold ? " grid-subject-line--bold" : ""}`}>
               {item.text}
@@ -117,7 +132,7 @@ function renderEntries(items, expandAll) {
           ))}
         </div>
       )}
-      {rest.length > 0 && !expandAll && (
+      {rest.length > 0 && (
         <div className="grid-subject-line grid-overflow">({rest.length} more)</div>
       )}
     </>
@@ -126,7 +141,7 @@ function renderEntries(items, expandAll) {
 
 function LessonCell({
   slot, labels, mode, entityType, data, activeEntity,
-  onCellClick, noted, selected, noteText, expandAll,
+  onCellClick, noted, selected, noteText, expandAll, rosterIndex,
 }) {
   const hasClasses = labels.length > 0;
 
@@ -146,12 +161,29 @@ function LessonCell({
   const stateCls =
     (noted ? " grid-cell--noted" : "") + (selected ? " grid-cell--selected" : "");
 
+  // Lesson entries with their roster nested underneath — only built when
+  // expanded, since the roster index is only computed then.
+  function lessonEntries(forEntityType) {
+    return formatLines(data, labels, forEntityType).map((text, i) => ({
+      text,
+      bold: false,
+      children: expandAll ? (rosterIndex?.[slot]?.[labels[i]] ?? []) : undefined,
+    }));
+  }
+
+  // Activity-view student entries, normal weight.
+  function studentEntries() {
+    return labels
+      .filter(l => l.startsWith("s:"))
+      .map(l => ({ text: data.students[l.slice(2)]?.name ?? l, bold: false }));
+  }
+
   let cellCls;
   let body = null;
 
   if (mode === "school") {
     cellCls = `grid-cell grid-cell--school${hasClasses ? " grid-cell--occupied" : " grid-cell--empty"}`;
-    body = slot;
+    body = expandAll && hasClasses ? renderEntries(lessonEntries(null), true) : slot;
   } else if (!hasClasses) {
     if (freeCode) {
       cellCls = `grid-cell grid-cell--free${isSoftFree(freeCode) ? " grid-cell--free--soft" : ""}`;
@@ -169,11 +201,14 @@ function LessonCell({
         .filter(l => l.startsWith("t:"))
         .map(l => {
           const t = data.teachers[l.slice(2)];
-          return { text: t ? (t.display_name ?? t.surname) : l, bold: false };
+          return { text: t ? (t.display_name ?? t.surname) : l, bold: expandAll };
         });
-      body = teacherItems.length === 0
+      // Collapsed these cells are a staff list; expanded they reveal the
+      // learners on the same code, so the cell holds the full roster.
+      const items = expandAll ? [...teacherItems, ...studentEntries()] : teacherItems;
+      body = items.length === 0
         ? <div className="grid-subject-line">{slot} ({labels.length})</div>
-        : renderEntries(teacherItems, expandAll);
+        : renderEntries(items, expandAll);
     } else {
       // STUDY and every other activity (EXTRA/LAB/FREE/etc.) — mixed
       // teacher+student entries, teachers bolded.
@@ -183,22 +218,17 @@ function LessonCell({
           const t = data.teachers[l.slice(2)];
           return { text: t ? (t.display_name ?? t.surname) : l, bold: true };
         });
-      const sEntries = labels
-        .filter(l => l.startsWith("s:"))
-        .map(l => {
-          const s = data.students[l.slice(2)];
-          return { text: s?.name ?? l, bold: false };
-        });
-      body = renderEntries([...tEntries, ...sEntries], expandAll);
+      body = renderEntries([...tEntries, ...studentEntries()], expandAll);
     }
   } else {
     cellCls = "grid-cell grid-cell--active";
-    const items = formatLines(data, labels, entityType).map(text => ({ text, bold: false }));
-    body = renderEntries(items, expandAll);
+    body = renderEntries(lessonEntries(entityType), expandAll);
   }
 
+  const expandedCls = expandAll ? " grid-cell--expanded" : "";
+
   return (
-    <td className={`${cellCls}${stateCls}`} onClick={handleOccupiedClick}>
+    <td className={`${cellCls}${stateCls}${expandedCls}`} onClick={handleOccupiedClick}>
       {body}
       {noteText && <div className="grid-note-inline">{noteText}</div>}
     </td>
@@ -208,6 +238,7 @@ function LessonCell({
 export default function TimetableGrid({
   slotMap, data, activeEntity, mode, entityType,
   overlaySources, onCellClick, notedSlots, noteTextMap, selectedSlot, expandAll,
+  rosterIndex, onToggleExpandAll,
 }) {
   return (
     <div className="grid-wrap">
@@ -224,7 +255,17 @@ export default function TimetableGrid({
             <th className="grid-period-header">5</th>
             <th className="grid-break-header" />
             <th className="grid-period-header">6</th>
-            <th className="grid-period-header">7</th>
+            {/* One control for the whole grid, parked in the last period header. */}
+            <th className="grid-period-header grid-period-header--last">
+              7
+              <button
+                className="grid-expand-toggle"
+                onClick={onToggleExpandAll}
+                title={expandAll ? "Collapse all cells" : "Expand all cells"}
+              >
+                {expandAll ? "−" : "+"}
+              </button>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -256,6 +297,7 @@ export default function TimetableGrid({
                   noteText={noteTextMap?.get(slot)}
                   selected={selectedSlot === slot}
                   expandAll={expandAll}
+                  rosterIndex={rosterIndex}
                 />
               );
             };

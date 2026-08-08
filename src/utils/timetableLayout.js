@@ -1,3 +1,5 @@
+import { matchesGrade } from "./gradeFilter";
+
 // Rotation: rows = Day 1..8, columns = Period 1..7. Cells = subblock label.
 // Mirrors E:\TimePyBling\ui\constants.py TIMETABLE_GRID.
 export const TIMETABLE_GRID = [
@@ -87,6 +89,24 @@ function getActivitySlotMap(data, code) {
   return map;
 }
 
+// { timeslot: [label, ...] } — every lesson attended by a grade or reg class.
+// Built from student_slots rather than lessons[].grade so combo lessons and any
+// cross-grade placement scope correctly.
+function getGradeSlotMap(data, id) {
+  const map = {};
+  for (const [sid, student] of Object.entries(data.students ?? {})) {
+    if (!matchesGrade(student, id)) continue;
+    for (const [slot, label] of Object.entries(data.student_slots?.[sid] ?? {})) {
+      (map[slot] ??= new Set()).add(label);
+    }
+  }
+  const out = {};
+  for (const [slot, set] of Object.entries(map)) {
+    out[slot] = sortLabels([...set], data.lessons);
+  }
+  return out;
+}
+
 // { timeslot: [label, ...] } — all instances of a subject code
 function getSubjectSlotMap(data, subjectCode) {
   const map = {};
@@ -107,5 +127,6 @@ export function slotMapFor(data, entity) {
   if (type === "teacher") return getTeacherSlotMap(data, id);
   if (type === "student") return getStudentSlotMap(data, id);
   if (type === "activity") return getActivitySlotMap(data, id);
+  if (type === "grade") return getGradeSlotMap(data, id);
   return getSubjectSlotMap(data, id);
 }

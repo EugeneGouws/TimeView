@@ -7,13 +7,14 @@ import TimesGrid from "./components/TimesGrid";
 import SubblockPopout from "./components/SubblockPopout";
 import SearchBar, { EntitySearch } from "./components/SearchBar";
 import NotePopout from "./components/NotePopout";
-import { cellKey, getAllNotes, setNote, clearAllNotes } from "./utils/notesStore";
-import { cellDetails } from "./utils/cellDetails";
+import { cellKey, getAllNotes, setNote } from "./utils/notesStore";
+import { cellDetails, buildRosterIndex } from "./utils/cellDetails";
 import { buildSlotMap, slotMapFor } from "./utils/timetableLayout";
 import { validate } from "./utils/schema";
 import { getHandle, clearHandle } from "./utils/fileHandleStore";
 import { getLastEntity, setLastEntity } from "./utils/lastEntityStore";
 import { ACTIVITY_LABEL } from "./utils/activityLabels";
+import { gradeLabel } from "./utils/gradeFilter";
 import "./App.css";
 
 const MAX_COMPARE = 3;
@@ -25,6 +26,7 @@ function getEntityLabel(data, entity) {
     return t?.display_name ?? t?.surname ?? entity.id;
   }
   if (entity.type === "student") return data.students[entity.id]?.name ?? entity.id;
+  if (entity.type === "grade") return gradeLabel(entity.id);
   if (entity.type === "activity") {
     if (entity.id === "STUDY") return "Study / Free";
     return ACTIVITY_LABEL[entity.id] ?? entity.id;
@@ -43,7 +45,6 @@ function AppShell() {
   const [loadError, setLoadError] = useState(null);
   const [addingCompare, setAddingCompare] = useState(false);
   const [notes, setNotes] = useState(() => getAllNotes());
-  const [noteMode, setNoteMode] = useState(false);
   const [expandAll, setExpandAll] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [noteSlot, setNoteSlot] = useState(null); // slot whose note editor is open
@@ -109,6 +110,12 @@ function AppShell() {
 
   const schoolSlotMap = useMemo(() => (data ? buildSlotMap(data) : {}), [data]);
 
+  // Only the expanded grid needs rosters — don't pay for the index otherwise.
+  const rosterIndex = useMemo(
+    () => (data && expandAll ? buildRosterIndex(data) : null),
+    [data, expandAll]
+  );
+
   const entitySlotMap = useMemo(
     () => slotMapFor(data, activeEntity),
     [data, activeEntity]
@@ -171,22 +178,14 @@ function AppShell() {
   const [prevEntityKey, setPrevEntityKey] = useState(entityKey);
   if (prevEntityKey !== entityKey) {
     setPrevEntityKey(entityKey);
-    setNoteMode(false);
     setSelectedSlot(null);
     setNoteSlot(null);
   }
 
-  // Single editor path; the pen and a cell click are just two ways in.
+  // Reached from the cell panel's pen — every cell type opens that panel.
   function openNoteEditor(slot) {
     setPopout(null);
-    setNoteMode(false);
     setNoteSlot(slot);
-  }
-
-  function handleToggleNote() {
-    if (noteMode) setNoteMode(false);
-    else if (selectedSlot) openNoteEditor(selectedSlot);
-    else setNoteMode(true);
   }
 
   function handleSaveNote(text, displayMode) {
@@ -194,23 +193,8 @@ function AppShell() {
     setNoteSlot(null);
   }
 
-  function handleClearAllNotes() {
-    setNotes(clearAllNotes());
-    setNoteSlot(null);
-  }
-
   function handleCellClick(slot, cellRect, gridRect) {
     setSelectedSlot(slot);
-    if (noteMode && notesEnabled) {
-      openNoteEditor(slot);
-      return;
-    }
-    // Frees and empties have nothing to show — selecting is enough, and it lets
-    // the pen reach them.
-    if ((currentSlotMap[slot] ?? []).length === 0) {
-      setPopout(null);
-      return;
-    }
     setPopout({ slot, cellRect, gridRect });
   }
 
@@ -229,21 +213,8 @@ function AppShell() {
   }
 
   return (
-    <div
-      id="app"
-      className={[
-        showTimesOnPrint ? "" : "print-no-times",
-        noteMode && notesEnabled ? "note-mode" : "",
-      ].filter(Boolean).join(" ")}
-    >
-      <TopBar
-        canPrint={!!data}
-        noteMode={noteMode}
-        noteDisabled={!notesEnabled}
-        onToggleNote={handleToggleNote}
-        expandAll={expandAll}
-        onToggleExpandAll={() => setExpandAll(v => !v)}
-      />
+    <div id="app" className={showTimesOnPrint ? "" : "print-no-times"}>
+      <TopBar canPrint={!!data} />
       <div id="timetable-area">
         {data && <SearchBar />}
         {data && activeEntity && (
@@ -295,11 +266,12 @@ function AppShell() {
               entityType={activeEntity?.type}
               overlaySources={overlayMode ? overlaySources : null}
               onCellClick={handleCellClick}
-              noteMode={noteMode && notesEnabled}
               notedSlots={notedSlots}
               noteTextMap={inlineNoteText}
               selectedSlot={selectedSlot}
               expandAll={expandAll}
+              rosterIndex={rosterIndex}
+              onToggleExpandAll={() => setExpandAll(v => !v)}
             />
             <TimesGrid />
           </>
@@ -342,7 +314,6 @@ function AppShell() {
           initialText={notes[cellKey(activeEntity, noteSlot)]?.text ?? ""}
           initialDisplayMode={notes[cellKey(activeEntity, noteSlot)]?.displayMode ?? "dot"}
           onSave={handleSaveNote}
-          onClearAll={handleClearAllNotes}
           onClose={() => setNoteSlot(null)}
         />
       )}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { subjectDisplay } from "../utils/subjectNames";
-import { rosterAtSlot } from "../utils/cellDetails";
+import { rosterAtSlot, cellDetails } from "../utils/cellDetails";
 
 function HeaderActions({ onOpenNote, onClose }) {
   return (
@@ -50,6 +50,11 @@ export default function SubblockPopout({ slot, cellRect, gridRect, data, slotMap
   const [selected, setSelected] = useState(null); // { label, itemRect }
   const labels = slotMap[slot] ?? [];
 
+  // One rule for every first panel: open beside the cell that was clicked,
+  // flipping up when the cell sits below the grid midpoint. (placeStudentPanel
+  // is a hoisted declaration further down.)
+  const firstPanelPos = placeStudentPanel(cellRect, cellRect);
+
   // Activity mode: labels are prefixed entity IDs (s:10234 / t:BALAY).
   if (mode === "entity" && activeEntity?.type === "activity") {
     const teachers = [];
@@ -67,22 +72,18 @@ export default function SubblockPopout({ slot, cellRect, gridRect, data, slotMap
     students.sort((a, b) => a.name.localeCompare(b.name));
     const total = teachers.length + students.length;
 
-    const pos = gridRect
-      ? { ...placeHorizontal(cellRect), top: gridRect.top + 4, maxHeight: gridRect.height - 8 }
-      : { ...placeHorizontal(cellRect), ...placeVertical(cellRect.top) };
-
     return (
       <div className="popout-overlay popout-overlay--transparent" onClick={onClose}>
         <div
           className="popout-panel"
           style={{
             position: "fixed",
-            left: pos.left,
-            top: pos.top,
+            left: firstPanelPos.left,
+            top: firstPanelPos.top,
             minWidth: PANEL_MIN_W,
             maxWidth: PANEL_MAX_W,
             width: "max-content",
-            maxHeight: pos.maxHeight,
+            maxHeight: firstPanelPos.maxHeight,
           }}
           onClick={e => e.stopPropagation()}
         >
@@ -112,20 +113,50 @@ export default function SubblockPopout({ slot, cellRect, gridRect, data, slotMap
     );
   }
 
+  // Nothing timetabled — free, duty or an empty school-wide block. Same panel,
+  // same note button; cellDetails resolves the free-period code to its label.
+  if (labels.length === 0) {
+    const items = cellDetails(data, slotMap, slot, mode, activeEntity).items;
+
+    return (
+      <div className="popout-overlay popout-overlay--transparent" onClick={onClose}>
+        <div
+          className="popout-panel"
+          style={{
+            position: "fixed",
+            left: firstPanelPos.left,
+            top: firstPanelPos.top,
+            minWidth: PANEL_MIN_W,
+            maxWidth: PANEL_MAX_W,
+            width: "max-content",
+            maxHeight: firstPanelPos.maxHeight,
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="popout-header">
+            <span className="popout-title">Block {slot}</span>
+            <HeaderActions onOpenNote={onOpenNote} onClose={onClose} />
+          </div>
+          <div className="popout-body">
+            {items.length === 0 ? (
+              <p className="popout-empty">No classes in this block.</p>
+            ) : (
+              items.map((item, i) => (
+                <div key={i} className="popout-student popout-student--teacher">
+                  {item.primary}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Entity mode with single subject → skip subject panel, jump to students.
   const directMode = mode === "entity" && labels.length === 1;
 
-  // First panel: fill grid height if gridRect known, else fall back.
-  const subjectPos = gridRect
-    ? {
-        ...placeHorizontal(cellRect),
-        top: gridRect.top + 4,
-        maxHeight: gridRect.height - 8,
-      }
-    : {
-        ...placeHorizontal(cellRect),
-        ...placeVertical(cellRect.top),
-      };
+  const subjectPos = firstPanelPos;
 
   // Second panel: flip up or down based on click position in grid.
   function placeStudentPanel(itemRect, subjectPanelRect) {
@@ -149,7 +180,7 @@ export default function SubblockPopout({ slot, cellRect, gridRect, data, slotMap
     const students = rosterAtSlot(data, label, slot);
     const subj = data.lessons[label];
 
-    const directPos = placeStudentPanel(cellRect, cellRect);
+    const directPos = firstPanelPos;
 
     return (
       <div className="popout-overlay popout-overlay--transparent" onClick={onClose}>

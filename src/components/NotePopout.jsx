@@ -2,7 +2,7 @@ import { useState } from "react";
 import { slotPosition } from "../utils/timetableLayout";
 
 export default function NotePopout({
-  slot, title, details, initialText, initialDisplayMode, onSave, onClearAll, onClose,
+  slot, title, details, initialText, initialDisplayMode, onSave, onClose,
 }) {
   const [text, setText] = useState(initialText ?? "");
   const [displayMode, setDisplayMode] = useState(initialDisplayMode ?? "dot");
@@ -72,14 +72,6 @@ export default function NotePopout({
             <button className="note-btn" onClick={() => onSave("", displayMode)}>Delete</button>
           )}
           <button className="note-btn" onClick={onClose}>Cancel</button>
-          <button
-            className="note-btn note-btn--danger"
-            onClick={() => {
-              if (window.confirm("Delete every note stored on this device?")) onClearAll();
-            }}
-          >
-            Clear all notes
-          </button>
         </div>
       </div>
     </div>

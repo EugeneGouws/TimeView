@@ -92,7 +92,7 @@
 .search-input-wrap {
   position: relative;
   flex: 1;
-  max-width: 260px;
+  max-width: 200px;
 }
 
 .entity-search {
@@ -420,6 +420,38 @@
   min-height: 76px;
   word-break: break-word;
   overflow-wrap: break-word;
+  cursor: pointer;
+}
+
+/* Expanded cells carry nested rosters — centred text stops reading as a list. */
+.grid-cell--expanded {
+  text-align: left;
+}
+
+.grid-period-header--last {
+  position: relative;
+}
+
+/* One control for the whole grid, at the top-right corner of the table. */
+.grid-expand-toggle {
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  line-height: 1;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  opacity: 0.55;
+
+  &:hover {
+    opacity: 1;
+  }
 }
 
 .grid-cell--empty {
@@ -478,7 +510,8 @@
   word-break: break-word;
 }
 
-.grid-subject-line + .grid-subject-line {
+.grid-subject-line + .grid-subject-line,
+.grid-nested-line + .grid-subject-line {
   margin-top: 6px;
   padding-top: 4px;
   border-top: 1px dashed rgba(0, 0, 0, 0.08);
@@ -486,6 +519,16 @@
 
 .grid-subject-line--bold {
   font-weight: 600;
+}
+
+/* Second drill-down level (a lesson's learners), shown only when expanded. */
+.grid-nested-line {
+  font-size: 10px;
+  line-height: 1.25;
+  padding-left: 8px;
+  color: #555;
+  text-align: left;
+  word-break: break-word;
 }
 
 .grid-overflow {
@@ -998,11 +1041,6 @@
   font-size: 11px;
 }
 
-/* Note mode: every cell is a target. */
-.note-mode .grid-cell {
-  cursor: pointer;
-}
-
 /* ── Print ─────────────────────────────────────────────────── */
 
 @page {
@@ -1070,13 +1108,14 @@
     line-height: 1.25;
   }
 
-  /* Print always shows every entry, regardless of the on-screen expand-all
-     toggle — the "(N more)" badge becomes redundant once everything shows. */
-  .grid-cell-overflow-group {
-    display: block !important;
+  .grid-nested-line {
+    font-size: 8px;
+    line-height: 1.2;
   }
 
-  .grid-overflow {
+  /* The +/− control is a screen affordance. Print otherwise matches the screen:
+     an expanded grid prints its rosters, a collapsed one prints compact. */
+  .grid-expand-toggle {
     display: none;
   }
 

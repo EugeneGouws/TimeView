@@ -12,6 +12,23 @@ export function rosterAtSlot(data, label, slot) {
   return out.sort((a, b) => a.name.localeCompare(b.name));
 }
 
+// { slot: { label: [name, ...] } } — every roster in one pass. The grid's
+// expanded view needs a roster per lesson per cell; rosterAtSlot rescans every
+// student on each call, which is ~1700 full scans for a school-wide grid.
+export function buildRosterIndex(data) {
+  const index = {};
+  for (const [sid, slots] of Object.entries(data.student_slots ?? {})) {
+    const name = data.students[sid]?.name ?? sid;
+    for (const [slot, label] of Object.entries(slots)) {
+      ((index[slot] ??= {})[label] ??= []).push(name);
+    }
+  }
+  for (const bySlot of Object.values(index)) {
+    for (const names of Object.values(bySlot)) names.sort((a, b) => a.localeCompare(b));
+  }
+  return index;
+}
+
 // Read-only summary of what a cell holds, for display alongside its note.
 // Mirrors SubblockPopout's three modes without any of its interactivity.
 export function cellDetails(data, slotMap, slot, mode, activeEntity) {
