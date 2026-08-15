@@ -10,6 +10,6 @@ export const ACTIVITY_LABEL = {
 
 // "Soft" frees: entity is nominally free but has a duty, so they get a lighter
 // highlight than a genuinely free period.
-export const SOFT_FREE_CODES = ["LIB", "BAT", "MEETING"];
+const SOFT_FREE_CODES = ["LIB", "BAT", "MEETING"];
 
 export const isSoftFree = (code) => SOFT_FREE_CODES.includes(code);

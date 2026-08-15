@@ -1,3 +1,69 @@
+/* The header and times grid are styled as printed paper — fixed white/grey
+   fills that a dark-mode browser leaves stranded under light text. Only the
+   fills and rules are tokenised; text keeps var(--text), which reads fine on
+   the dark paper. Light-mode values are the originals, so light is unchanged. */
+:root {
+  --paper: #FFFFFF;
+  --paper-line: #BBBBBB;
+  --paper-band: #ECECEC;
+  --times-line: #999999;
+
+  /* Grid fills and inks. The reg/break bands and the free-period highlights
+     are signal colours — dark mode keeps their hue and drops their lightness
+     rather than swapping them, so a teacher reads the same grid either way. */
+  --grid-line: #AAAAAA;
+  --band-reg: #F9CDAA;
+  --band-break: #9DBB61;
+  --band-text: #333333;
+  --free-bg: #DCF3E0;
+  --free-soft-bg: #EDF9EF;
+  --muted-text: #888888;
+  --nested-text: #555555;
+  --note-text: #9A3412;
+  --rule-soft: rgba(0, 0, 0, 0.08);
+
+  /* Both grids carry dense 11px/7pt text. --text is body copy and goes too dim
+     against a dark fill at that size, so the grids get their own ink. */
+  --grid-text: #6B6375;
+
+  /* Times-grid period kinds. One token per `kind` in utils/timesData.js. */
+  --times-support: #FFF3CD;
+  --times-lesson: #FFFFFF;
+  --times-reg: #FCE8D5;
+  --times-break: #D4EDDA;
+  --times-assembly: #CFE2F3;
+  --times-test: #F8D7DA;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1E1F27;
+    --paper-line: #3A3D49;
+    --paper-band: #272932;
+    --times-line: #4A4D59;
+
+    --grid-line: #3A3D49;
+    --band-reg: #5C4028;
+    --band-break: #47552B;
+    --band-text: #E5E7EB;
+    --free-bg: #1B3324;
+    --free-soft-bg: #17251B;
+    --muted-text: #A2A8B6;
+    --nested-text: #B4BAC6;
+    --note-text: #FDBA74;
+    --rule-soft: rgba(255, 255, 255, 0.12);
+
+    --grid-text: #E5E7EB;
+
+    --times-support: #3A3423;
+    --times-lesson: #1E1F27;
+    --times-reg: #38291D;
+    --times-break: #24331F;
+    --times-assembly: #1E2C3A;
+    --times-test: #3A2226;
+  }
+}
+
 /* ── App shell ─────────────────────────────────────────────── */
 
 #app {
@@ -78,6 +144,14 @@
   margin: 0;
 }
 
+.empty-state-version {
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  color: var(--text);
+  opacity: 0.6;
+  margin: 0;
+}
+
 /* ── Search bar ────────────────────────────────────────────── */
 
 .search-bar {
@@ -141,11 +215,51 @@
   flex-shrink: 0;
 }
 
-/* Per-source comparison palette */
-.grid-line--c0 { --entity-color: #2563EB; } /* blue */
-.grid-line--c1 { --entity-color: #D97706; } /* orange */
-.grid-line--c2 { --entity-color: #7C3AED; } /* purple */
-.grid-line--c3 { --entity-color: #0D9488; } /* teal */
+/* Per-source comparison palette. Ordered so the earliest picks — the common
+   2-and-3-way compares — are the furthest apart in hue; blue and purple sat
+   adjacent before and beta testers could not tell them apart. Cycled with
+   modulo by colorClass() in utils/entityColors.js, so there is no cap on how
+   many timetables can be compared. PALETTE_SIZE there must match the count. */
+:root {
+  --entity-c0: #1D4ED8; /* blue */
+  --entity-c1: #C2410C; /* orange */
+  --entity-c2: #15803D; /* green */
+  --entity-c3: #B91C1C; /* red */
+  --entity-c4: #7E22CE; /* purple */
+  --entity-c5: #0E7490; /* cyan */
+  --entity-c6: #BE185D; /* pink */
+  --entity-c7: #4D7C0F; /* olive */
+  --entity-c8: #A16207; /* brown */
+  --entity-c9: #4338CA; /* indigo */
+}
+
+/* Dark ground needs lighter, less saturated tints — the light-mode values sit
+   at roughly 3:1 on #16171d and read as muddy. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --entity-c0: #60A5FA;
+    --entity-c1: #FB923C;
+    --entity-c2: #4ADE80;
+    --entity-c3: #F87171;
+    --entity-c4: #C084FC;
+    --entity-c5: #22D3EE;
+    --entity-c6: #F472B6;
+    --entity-c7: #A3E635;
+    --entity-c8: #FCD34D;
+    --entity-c9: #A5B4FC;
+  }
+}
+
+.grid-line--c0 { --entity-color: var(--entity-c0); }
+.grid-line--c1 { --entity-color: var(--entity-c1); }
+.grid-line--c2 { --entity-color: var(--entity-c2); }
+.grid-line--c3 { --entity-color: var(--entity-c3); }
+.grid-line--c4 { --entity-color: var(--entity-c4); }
+.grid-line--c5 { --entity-color: var(--entity-c5); }
+.grid-line--c6 { --entity-color: var(--entity-c6); }
+.grid-line--c7 { --entity-color: var(--entity-c7); }
+.grid-line--c8 { --entity-color: var(--entity-c8); }
+.grid-line--c9 { --entity-color: var(--entity-c9); }
 
 .entity-chip {
   display: inline-flex;
@@ -166,10 +280,16 @@
   flex-shrink: 0;
 }
 
-.entity-chip-swatch--c0 { background: #2563EB; }
-.entity-chip-swatch--c1 { background: #D97706; }
-.entity-chip-swatch--c2 { background: #7C3AED; }
-.entity-chip-swatch--c3 { background: #0D9488; }
+.entity-chip-swatch--c0 { background: var(--entity-c0); }
+.entity-chip-swatch--c1 { background: var(--entity-c1); }
+.entity-chip-swatch--c2 { background: var(--entity-c2); }
+.entity-chip-swatch--c3 { background: var(--entity-c3); }
+.entity-chip-swatch--c4 { background: var(--entity-c4); }
+.entity-chip-swatch--c5 { background: var(--entity-c5); }
+.entity-chip-swatch--c6 { background: var(--entity-c6); }
+.entity-chip-swatch--c7 { background: var(--entity-c7); }
+.entity-chip-swatch--c8 { background: var(--entity-c8); }
+.entity-chip-swatch--c9 { background: var(--entity-c9); }
 
 .entity-chip-close {
   font-size: 16px;
@@ -221,16 +341,16 @@
 
 .tt-header {
   flex-shrink: 0;
-  border: 1px solid #BBBBBB;
+  border: 1px solid var(--paper-line);
   margin: 8px 8px 0;
-  background: #FFFFFF;
+  background: var(--paper);
 }
 
 .tt-header-row {
   display: grid;
   grid-template-columns: 1fr 2fr 1fr;
   align-items: stretch;
-  border-bottom: 1px solid #BBBBBB;
+  border-bottom: 1px solid var(--paper-line);
 }
 
 .tt-header-row:last-child {
@@ -267,7 +387,7 @@
 .tt-header-name {
   font-family: Arial, sans-serif;
   font-size: 12pt;
-  background: #ECECEC;
+  background: var(--paper-band);
   padding: 8px 12px;
   display: flex;
   align-items: center;
@@ -300,18 +420,26 @@
   width: auto;
   margin: 0 6px 6px;
   flex-shrink: 0;
+  color: var(--grid-text);
 }
+
+.times-grid-cell--support  { background: var(--times-support); }
+.times-grid-cell--lesson   { background: var(--times-lesson); }
+.times-grid-cell--reg      { background: var(--times-reg); }
+.times-grid-cell--break    { background: var(--times-break); }
+.times-grid-cell--assembly { background: var(--times-assembly); }
+.times-grid-cell--test     { background: var(--times-test); }
 
 .times-grid th,
 .times-grid td {
-  border: 1px solid #999999;
+  border: 1px solid var(--times-line);
   padding: 2px 3px;
   text-align: center;
   white-space: nowrap;
 }
 
 .times-grid-rowlabel {
-  background: #ECECEC;
+  background: var(--paper-band);
   font-weight: bold;
   text-align: center;
   width: 90px;
@@ -344,11 +472,12 @@
   min-width: 820px;
   table-layout: fixed;
   flex: 1;
+  color: var(--grid-text);
 }
 
 .timetable-grid th,
 .timetable-grid td {
-  border: 1px solid #aaaaaa;
+  border: 1px solid var(--grid-line);
 }
 
 .grid-day-header {
@@ -372,7 +501,8 @@
   text-align: center;
   font-size: 10px;
   font-weight: 700;
-  background: #F9CDAA;
+  background: var(--band-reg);
+  color: var(--band-text);
 }
 
 .grid-break-header {
@@ -381,7 +511,8 @@
   text-align: center;
   font-size: 10px;
   font-weight: 700;
-  background: #9DBB61;
+  background: var(--band-break);
+  color: var(--band-text);
 }
 
 .grid-block-label {
@@ -397,20 +528,20 @@
   width: 18px;
   padding: 2px 0;
   text-align: center;
-  background: #F9CDAA;
+  background: var(--band-reg);
   font-size: 10px;
   font-weight: 700;
-  color: #333;
+  color: var(--band-text);
 }
 
 .grid-break-cell {
   width: 18px;
   padding: 2px 0;
   text-align: center;
-  background: #9DBB61;
+  background: var(--band-break);
   font-size: 10px;
   font-weight: 700;
-  color: #333;
+  color: var(--band-text);
 }
 
 .grid-cell {
@@ -487,20 +618,20 @@
   background: var(--bg);
   text-align: center;
   font-style: italic;
-  color: #888;
+  color: var(--muted-text);
   font-size: 11px;
 }
 
 /* Duty period in single-entity view — marked, but not the full free highlight. */
 .grid-cell--free--soft {
-  background: #EDF9EF;
+  background: var(--free-soft-bg);
   box-shadow: inset 3px 0 0 rgba(45, 130, 70, 0.25);
 }
 
 .grid-free-line {
   font-style: italic;
   font-size: 11px;
-  color: #888;
+  color: var(--muted-text);
 }
 
 .grid-subject-line {
@@ -514,7 +645,7 @@
 .grid-nested-line + .grid-subject-line {
   margin-top: 6px;
   padding-top: 4px;
-  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+  border-top: 1px dashed var(--rule-soft);
 }
 
 .grid-subject-line--bold {
@@ -526,7 +657,7 @@
   font-size: 10px;
   line-height: 1.25;
   padding-left: 8px;
-  color: #555;
+  color: var(--nested-text);
   text-align: left;
   word-break: break-word;
 }
@@ -537,14 +668,11 @@
   font-size: 10px;
 }
 
-/* Overflow entries beyond OVERFLOW_LIMIT — hidden until the header's
-   expand-all toggle is on, or unconditionally in print (see @media print). */
+/* Overflow entries beyond OVERFLOW_LIMIT. Collapsed cells keep them in the DOM
+   but hidden; expanding re-renders the cell with every entry instead, so this
+   only ever hides. Print matches the screen either way. */
 .grid-cell-overflow-group {
   display: none;
-}
-
-.grid-cell-overflow-group--expanded {
-  display: block;
 }
 
 .grid-note-inline {
@@ -553,7 +681,7 @@
   border-top: 1px dashed rgba(194, 65, 12, 0.35);
   font-size: 10px;
   font-style: italic;
-  color: #9A3412;
+  color: var(--note-text);
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -573,13 +701,13 @@
 }
 
 .grid-cell--shared-free {
-  background: #DCF3E0;
+  background: var(--free-bg);
 }
 
 /* Nominally free but on duty (LIB / BAT / MEETING). Dashed edge keeps the two
    tiers distinguishable in greyscale print. */
 .grid-cell--shared-free--soft {
-  background: #EDF9EF;
+  background: var(--free-soft-bg);
   box-shadow: inset 3px 0 0 rgba(45, 130, 70, 0.25);
 }
 
@@ -823,11 +951,6 @@
   }
 }
 
-.topbar-btn--on {
-  background: #C2410C;
-  border-color: #C2410C;
-}
-
 .upload-error {
   display: block;
   margin-top: 6px;
@@ -939,7 +1062,7 @@
 }
 
 .note-details-item + .note-details-item {
-  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+  border-top: 1px dashed var(--rule-soft);
 }
 
 .note-details-primary {
@@ -1034,13 +1157,6 @@
   }
 }
 
-.note-btn--danger {
-  margin-left: auto;
-  border-color: transparent;
-  color: #c00;
-  font-size: 11px;
-}
-
 /* ── Print ─────────────────────────────────────────────────── */
 
 @page {
@@ -1056,6 +1172,33 @@
   #app {
     background: #fff !important;
     color: #000 !important;
+  }
+
+  /* Paper prints as paper, even when the browser is in dark mode. */
+  :root {
+    --paper: #FFFFFF;
+    --paper-line: #BBBBBB;
+    --paper-band: #ECECEC;
+    --times-line: #999999;
+
+    --grid-line: #AAAAAA;
+    --band-reg: #F9CDAA;
+    --band-break: #9DBB61;
+    --band-text: #333333;
+    --free-bg: #DCF3E0;
+    --free-soft-bg: #EDF9EF;
+    --muted-text: #888888;
+    --nested-text: #555555;
+    --note-text: #9A3412;
+    --rule-soft: rgba(0, 0, 0, 0.08);
+    --grid-text: #000000;
+
+    --times-support: #FFF3CD;
+    --times-lesson: #FFFFFF;
+    --times-reg: #FCE8D5;
+    --times-break: #D4EDDA;
+    --times-assembly: #CFE2F3;
+    --times-test: #F8D7DA;
   }
 
   /* Release the fixed-width / overflow locks so the whole grid renders. */
@@ -1076,11 +1219,13 @@
     overflow: visible;
   }
 
+  /* .popout-panel is portalled to document.body, so it is not inside any of the
+     other hidden containers — it needs hiding by name or it prints over the grid. */
   .topbar,
   .search-bar,
   .entity-bar,
   .popout-overlay,
-  .subblock-popout,
+  .popout-panel,
   .note-popout,
   .upload-modal-overlay,
   .upload-error {
@@ -1124,7 +1269,6 @@
   }
 
   /* Times grid only prints for a plain teacher/student timetable. */
-  #app.print-no-times .times-grid-wrap,
   #app.print-no-times .times-grid {
     display: none !important;
   }

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useAppState } from "../store/appState";
+import { useAppState } from "../store/appContext";
 import { validate, versionMismatch } from "../utils/schema";
 import { setHandle } from "../utils/fileHandleStore";
 

@@ -1,4 +1,4 @@
-import { TIMES_ROWS, KIND_BG } from "../utils/timesData";
+import { TIMES_ROWS } from "../utils/timesData";
 
 export default function TimesGrid() {
   return (
@@ -10,8 +10,7 @@ export default function TimesGrid() {
             {row.cells.map((c, i) => (
               <td
                 key={i}
-                className="times-grid-cell"
-                style={{ background: KIND_BG[c.kind] ?? "#FFFFFF" }}
+                className={`times-grid-cell times-grid-cell--${c.kind}`}
               >
                 <div className="times-grid-celllabel">{c.label}</div>
                 <div className="times-grid-celltime">{c.time}</div>

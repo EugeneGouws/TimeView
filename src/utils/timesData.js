@@ -1,7 +1,8 @@
 // Crawford lesson times reference. Manually editable.
 // Each row = { label, cells: [{ label, time, kind }] }
 // kind = "support" | "lesson" | "reg" | "break" | "assembly" | "test"
-// Determines background colour in TimesGrid.
+// Each kind renders as .times-grid-cell--<kind>; its fill is the App.css
+// --times-<kind> token. Adding a kind here needs a matching token pair there.
 
 export const TIMES_ROWS = [
   {
@@ -75,12 +76,3 @@ export const TIMES_ROWS = [
     ],
   },
 ];
-
-export const KIND_BG = {
-  support:  "#fff3cd",
-  lesson:   "#FFFFFF",
-  reg:      "#fce8d5",
-  break:    "#d4edda",
-  assembly: "#cfe2f3",
-  test:     "#f8d7da",
-};

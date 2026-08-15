@@ -44,17 +44,3 @@ export function setNote(key, text, displayMode) {
   return write({ ...notes });
 }
 
-export function setNoteDisplayMode(key, displayMode) {
-  const notes = getAllNotes();
-  if (notes[key]) notes[key] = { ...notes[key], displayMode };
-  return write({ ...notes });
-}
-
-export function clearAllNotes() {
-  try {
-    localStorage.removeItem(KEY);
-  } catch {
-    // ignore
-  }
-  return {};
-}

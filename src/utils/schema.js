@@ -1,4 +1,6 @@
-const SCHEMA_VERSION = "3.0";
+// 3.1 adds optional top-level `school` and `reg_classes` — additive, so 3.0
+// files still load.
+export const SCHEMA_VERSION = "3.1";
 
 const REQUIRED_KEYS = [
   "version",

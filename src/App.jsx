@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { AppProvider, useAppState } from "./store/appState";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AppProvider } from "./store/appState";
+import { useAppState } from "./store/appContext";
 import TopBar from "./components/TopBar";
 import TimetableGrid from "./components/TimetableGrid";
 import TimetableHeader from "./components/TimetableHeader";
@@ -10,14 +11,13 @@ import NotePopout from "./components/NotePopout";
 import { cellKey, getAllNotes, setNote } from "./utils/notesStore";
 import { cellDetails, buildRosterIndex } from "./utils/cellDetails";
 import { buildSlotMap, slotMapFor } from "./utils/timetableLayout";
-import { validate } from "./utils/schema";
+import { validate, SCHEMA_VERSION } from "./utils/schema";
 import { getHandle, clearHandle } from "./utils/fileHandleStore";
 import { getLastEntity, setLastEntity } from "./utils/lastEntityStore";
 import { ACTIVITY_LABEL } from "./utils/activityLabels";
 import { gradeLabel } from "./utils/gradeFilter";
+import { colorClass } from "./utils/entityColors";
 import "./App.css";
-
-const MAX_COMPARE = 3;
 
 function getEntityLabel(data, entity) {
   if (!entity || !data) return "";
@@ -40,7 +40,7 @@ function AppShell() {
   const activeEntity = state.activeEntity;
   const compareEntities = state.compareEntities;
 
-  const [popout, setPopout] = useState(null); // { slot, cellRect }
+  const [popout, setPopout] = useState(null); // { slot, anchorEl }
   const [needsReconnect, setNeedsReconnect] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [addingCompare, setAddingCompare] = useState(false);
@@ -50,7 +50,10 @@ function AppShell() {
   const [noteSlot, setNoteSlot] = useState(null); // slot whose note editor is open
   const handleRef = useRef(null);
 
-  async function readHandle(handle) {
+  // Stable identity so the mount effect below can depend on it honestly —
+  // everything captured (dispatch, the setState setters) is itself stable, so
+  // the effect still runs exactly once.
+  const readHandle = useCallback(async (handle) => {
     const file = await handle.getFile();
     const text = await file.text();
     const parsed = JSON.parse(text);
@@ -64,7 +67,7 @@ function AppShell() {
     if (last && Object.keys(slotMapFor(parsed, last)).length > 0) {
       dispatch({ type: "SET_ACTIVE_ENTITY", payload: last });
     }
-  }
+  }, [dispatch]);
 
   useEffect(() => {
     (async () => {
@@ -85,7 +88,7 @@ function AppShell() {
         setLoadError("Couldn't load the saved timetable file. Please locate it again.");
       }
     })();
-  }, [dispatch]);
+  }, [readHandle]);
 
   async function handleReconnect() {
     const handle = handleRef.current;
@@ -193,9 +196,9 @@ function AppShell() {
     setNoteSlot(null);
   }
 
-  function handleCellClick(slot, cellRect, gridRect) {
+  function handleCellClick(slot, anchorEl) {
     setSelectedSlot(slot);
-    setPopout({ slot, cellRect, gridRect });
+    setPopout({ slot, anchorEl });
   }
 
   function handleClose() {
@@ -221,7 +224,7 @@ function AppShell() {
           <div className="entity-bar">
             {overlaySources.map((src, i) => (
               <span key={`${src.entity.type}:${src.entity.id}`} className="entity-chip">
-                <span className={`entity-chip-swatch entity-chip-swatch--c${src.colorIdx}`} />
+                <span className={`entity-chip-swatch entity-chip-swatch--${colorClass(src.colorIdx)}`} />
                 <span className="entity-chip-label">
                   {src.entity.type.charAt(0).toUpperCase() + src.entity.type.slice(1)}
                   {": "}
@@ -236,7 +239,7 @@ function AppShell() {
                 </button>
               </span>
             ))}
-            {canCompare && compareEntities.length < MAX_COMPARE && (
+            {canCompare && (
               addingCompare ? (
                 <div className="entity-compare-search">
                   <EntitySearch
@@ -289,14 +292,17 @@ function AppShell() {
                 {loadError ?? "Upload a verified timetable to get started"}
               </p>
             )}
+            {/* First question in any pilot support call is "which build?" */}
+            <p className="empty-state-version">
+              TimeView v{__APP_VERSION__} · timetable schema v{SCHEMA_VERSION}
+            </p>
           </div>
         )}
       </div>
       {popout && data && (
         <SubblockPopout
           slot={popout.slot}
-          cellRect={popout.cellRect}
-          gridRect={popout.gridRect}
+          anchorEl={popout.anchorEl}
           data={data}
           slotMap={currentSlotMap}
           mode={activeEntity ? "entity" : "school"}

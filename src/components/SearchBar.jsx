@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useAppState } from "../store/appState";
+import { useAppState } from "../store/appContext";
 import { subjectDisplay } from "../utils/subjectNames";
 import { ACTIVITY_LABEL } from "../utils/activityLabels";
 import { gradeOptions } from "../utils/gradeFilter";

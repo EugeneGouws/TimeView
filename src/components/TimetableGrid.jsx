@@ -1,6 +1,7 @@
 import { TIMETABLE_GRID } from "../utils/timetableLayout";
 import { subjectDisplay } from "../utils/subjectNames";
 import { ACTIVITY_LABEL, isSoftFree } from "../utils/activityLabels";
+import { colorClass } from "../utils/entityColors";
 
 function freeSlotCode(data, entityType, entityId, slot) {
   const bucket = entityType === "student"
@@ -22,21 +23,6 @@ function formatLines(data, labels, entityType) {
     if (entityType === "student") return `${name}  ${teacherName}`;
     return `${name}  ${teacherName}  Gr${subj.grade}`;
   });
-}
-
-function captureRects(e) {
-  const r = e.currentTarget.getBoundingClientRect();
-  const wrap = e.currentTarget.closest(".grid-wrap");
-  const gr = wrap ? wrap.getBoundingClientRect() : null;
-  return {
-    cellRect: {
-      top: r.top, left: r.left, right: r.right, bottom: r.bottom,
-      width: r.width, height: r.height,
-    },
-    gridRect: gr
-      ? { top: gr.top, bottom: gr.bottom, left: gr.left, right: gr.right, height: gr.height }
-      : null,
-  };
 }
 
 // Comparison overlay: one cell shows every source's lessons colour-coded, and
@@ -62,9 +48,10 @@ function OverlayCell({ slot, sources, data, onCellClick }) {
   const sharedFree = !anyBusy && personalCount >= 2;
   const softFree = sharedFree && perSource.some(p => p.isPersonal && isSoftFree(p.freeCode));
 
+  // The cell element itself is the popout's anchor — its rect is re-read live,
+  // so the panel tracks it through scrolling.
   function handleClick(e) {
-    const { cellRect, gridRect } = captureRects(e);
-    onCellClick(slot, cellRect, gridRect);
+    onCellClick(slot, e.currentTarget);
   }
 
   const freeCls = sharedFree
@@ -74,7 +61,7 @@ function OverlayCell({ slot, sources, data, onCellClick }) {
   return (
     <td className={cls} onClick={anyBusy ? handleClick : undefined}>
       {perSource.map((p, si) => (
-        <div key={si} className={`grid-overlay-group grid-line--c${p.colorIdx}`}>
+        <div key={si} className={`grid-overlay-group grid-line--${colorClass(p.colorIdx)}`}>
           {p.busy
             ? p.lines.map((line, i) => (
                 <div key={i} className="grid-subject-line">{line}</div>
@@ -152,8 +139,7 @@ function LessonCell({
       : null;
 
   function handleOccupiedClick(e) {
-    const { cellRect, gridRect } = captureRects(e);
-    onCellClick(slot, cellRect, gridRect);
+    onCellClick(slot, e.currentTarget);
   }
 
   // Every cell is clickable — frees and empties select without opening a detail
